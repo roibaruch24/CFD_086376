@@ -9,32 +9,53 @@ void calc_h(float *h, float N)
 {
     *h=1/N; // define step size as 1/N, when N is the number of points in the interval
 }
-void calc_A(float *a,float h,float N)
+void calc_a (float *a,float h,float N)
 {
-    for (int i = 0; i<=N; i++)
+    for (int i=0; i<=N; i++)
     {
-        a[i]=1/(h*h) - i/(2*h);
+        a[i]=1;
     }
 }
-void calc_B(float *b,float h,float N)
+void calc_b (float *b,float h,float N)
 {
-    for (int i = 0; i<=N; i++)
+    for (int i=0; i<=N; i++)
     {
-        b[i]=-2/(h*h) +i*i;
+        b[i]=i*h;
     }
 }
-void calc_C(float *c,float h,float N)
+void calc_c (float *c,float h,float N)
 {
-    for (int i = 0; i<=N; i++)
+    for (int i=0; i<=N; i++)
     {
-        c[i]=1/(h*h) +i/(2*h);
+        c[i]=(i*h)*(i*h);
     }
 }
-void calc_D(float *d,float h,float N)
+void calc_A(float *A, float *a, float *b, float h, float N)
 {
-    for (int i = 0; i<=N; i++)
+    for (int i = 0; i <= N; i++)
     {
-        d[i]=sin(2*PI*i)+cos(2*PI*i);
+        A[i] = a[i] / (h * h) - b[i] / (2 * h);
+    }
+}
+void calc_B(float *B, float *a, float *c, float h, float N)
+{
+    for (int i = 0; i <= N; i++)
+    {
+        B[i] = -2 * a[i] / (h * h) + c[i];
+    }
+}
+void calc_C(float *C, float *a, float *b, float h, float N)
+{
+    for (int i = 0; i <= N; i++)
+    {
+        C[i] = a[i] / (h * h) + b[i] / (2 * h);
+    }
+}
+void calc_D(float *D, float h, float N)
+{
+    for (int i = 0; i <= N; i++)
+    {
+        D[i] = sin(2 * PI * i * h) + cos(2 * PI * i * h);
     }
 }
 typedef enum {
@@ -72,7 +93,7 @@ double calc_dig_B(float *B_vec, float *b, float N,float *c, OperationType bounda
            
     }
     }
-    double calc_dig_C(float *C_vec, float *c, float N,float *a, OperationType boundary_conditions) {
+double calc_dig_C(float *C_vec, float *c, float N,float *a, OperationType boundary_conditions) {
     switch (boundary_conditions) {
         case Dirichlet:
                 for (int i = 1; i < N-1; i++) {
@@ -88,7 +109,7 @@ double calc_dig_B(float *B_vec, float *b, float N,float *c, OperationType bounda
            
     }
     }
-    int tridiag(float *a, float *b, float *c, float *d, float *u, int is, int ie)
+int tridiag(float *a, float *b, float *c, float *d, float *u, int is, int ie)
 {
 
   int i;
@@ -109,7 +130,7 @@ double calc_dig_B(float *B_vec, float *b, float N,float *c, OperationType bounda
     }
   return(0);
 }
-    int main() {
+int main() {
     float N = 5; // Example value for N
     float h;
     float *u = (float *)malloc((N + 1) * sizeof(float));
@@ -117,6 +138,9 @@ double calc_dig_B(float *B_vec, float *b, float N,float *c, OperationType bounda
     float *b = (float *)malloc((N + 1) * sizeof(float));
     float *c = (float *)malloc((N + 1) * sizeof(float));
     float *d = (float *)malloc((N + 1) * sizeof(float));
+    float *A = (float *)malloc((N + 1) * sizeof(float));
+    float *B = (float *)malloc((N + 1) * sizeof(float));
+    float *C = (float *)malloc((N + 1) * sizeof(float));
     float *A_vec = (float *)malloc((N - 2) * sizeof(float)); // Allocate memory for A_vec
     float *B_vec = (float *)malloc((N - 1) * sizeof(float)); // Allocate memory for B_vec
     float *C_vec = (float *)malloc((N - 1) * sizeof(float)); // Allocate memory for C_vec
@@ -127,14 +151,17 @@ double calc_dig_B(float *B_vec, float *b, float N,float *c, OperationType bounda
     }
 
     calc_h(&h, N);
-    calc_A(a, h, N);
-    calc_B(b, h, N);
-    calc_C(c, h, N);
+    calc_a(a, h, N);
+    calc_b(b, h, N);
+    calc_c(c, h, N);
+    calc_A(A, a, b, h, N);
+    calc_B(B, a, c, h, N);
+    calc_C(C, a, b, h, N);
     calc_D(d, h, N);
-
-    calc_dig_A(A_vec, a, N, c, Neumann);
-    calc_dig_B(B_vec, b, N, c, Neumann);
-    calc_dig_C(C_vec, c, N, a, Neumann);
+    calc_dig_A(A_vec, A, N, c, Neumann);
+    calc_dig_B(B_vec, B, N, c, Neumann);
+    calc_dig_C(C_vec, C, N, a, Neumann);
+    
     tridiag(a, b, c, d, &u, 0, 1);
 
     
@@ -150,4 +177,3 @@ double calc_dig_B(float *B_vec, float *b, float N,float *c, OperationType bounda
 
     return 0;
 }
-    
