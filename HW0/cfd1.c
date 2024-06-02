@@ -1,10 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-
 #define PI 3.1415926
-
-
 void calc_h(float *h, float N)
 {
     *h=1/N; // define step size as 1/N, when N is the number of points in the interval
@@ -55,60 +52,34 @@ void calc_D(float *d,float h,float N)
 {
     for (int i = 0; i<=N; i++)
     {
-        d[i]=sin(2*PI*i)+cos(2*PI*i);
+        d[i]=sin(2*PI*i*h)+cos(2*PI*i*h);
     }
 }
 typedef enum {
     Dirichlet,
     Neumann
 } OperationType;
-
-double calc_dig_A(float *A_vec,float *A, float N,float *c, OperationType boundary_conditions) {
-    switch (boundary_conditions) {
+double LHS(float *A_vec, float *B_vec, float *C_vec, float *A, float *B, float *C,float N, OperationType boundary_conditions){
+    switch (boundary_conditions){
         case Dirichlet:
-                for (int i = 2; i < N; i++) {
-                A_vec[i-2] = A[i];
-            }
-            break;       
-        case Neumann:
-            for (int i = 0; i < N-1; i++) {
-                A_vec[i] = A[i+1];
-            }
-            A_vec[(int)N-1] = A[(int)N] + c[(int)N];
-            break;
-    }
-}
-double calc_dig_B(float *B_vec, float *B, float N,float *c, OperationType boundary_conditions) {
-    switch (boundary_conditions) {
-        case Dirichlet:
-                for (int i = 0; i < N-1; i++) {
+        for (int i = 0; i < N-2; i++) {
+                A_vec[i] = A[i+2];
                 B_vec[i] = B[i+1];
-            }
-            break;       
-        case Neumann:
-             for (int i = 0; i <= N; i++) {
-                B_vec[i] = B[i];
+                C_vec[i] = C[i+1];
             }
             break;
-           
-    }
-    }
-double calc_dig_C(float *C_vec, float *C, float N,float *a, OperationType boundary_conditions) {
-    switch (boundary_conditions) {
-        case Dirichlet:
-                for (int i = 1; i < N-1; i++) {
-                C_vec[i-1] = C[i];
-            }
-            break;       
+            B_vec[(int)N-1] = B[(int)N-1];  
         case Neumann:
-             for (int i = 1; i < N; i++) {
+        for (int i = 0; i < N; i++) {
+                A_vec[i] = A[i+1];
+                B_vec[i] = B[i];
                 C_vec[i] = C[i];
             }
-            C_vec[0] = a[0] + C[0];
+            A_vec[(int)N-1] = A[(int)N] + C[(int)N];
+             C_vec[0] = A[0] + C[0];
             break;
-           
-    }
-    }
+    }  
+}
 int tridiag(float *A_vec, float *B_vec, float *C_vec, float *d, float *u, int is, int ie)
 {
 
@@ -141,32 +112,19 @@ int main() {
     float *B = (float *)malloc((N + 1) * sizeof(float));
     float *C = (float *)malloc((N + 1) * sizeof(float));
     float *d = (float *)malloc((N + 1) * sizeof(float));
-    float *A_vec = (float *)malloc((N - 2) * sizeof(float)); // Allocate memory for A_vec
-    float *B_vec = (float *)malloc((N - 1) * sizeof(float)); // Allocate memory for B_vec
-    float *C_vec = (float *)malloc((N - 1) * sizeof(float)); // Allocate memory for C_vec
-
-    if (!a || !b || !c || !d || !A_vec || !B_vec || !C_vec) {
-        fprintf(stderr, "Memory allocation failed\n");
-        return 1;
-    }
-
+    float *A_vec = (float *)malloc((N) * sizeof(float));
+    float *B_vec = (float *)malloc((N) * sizeof(float));
+    float *C_vec = (float *)malloc((N) * sizeof(float));
     calc_h(&h, N);
     calc_a(a, h, N);
     calc_b(b, h, N);
     calc_c(c, h, N);
     calc_A(A, a, b, h, N);
-    calc_B(B,a,c,h,N);
+    calc_B(B, a, c, h, N);
     calc_C(C, a, b, h, N);
     calc_D(d, h, N);
-
-    calc_dig_A(A_vec, A, N, C, Neumann);
-    calc_dig_B(B_vec, B, N, C, Neumann);
-    calc_dig_C(C_vec, C, N, A, Neumann);
-    tridiag(A_vec, B_vec, C_vec, d, &u, 0, 1);
-
-    
-
-    // Remember to free allocated memory
+    LHS(A_vec, B_vec, C_vec, A, B, C, N, Dirichlet);
+    tridiag(A_vec, B_vec, C_vec, d, u, 0, N - 1);
     free(a);
     free(b);
     free(c);
@@ -174,7 +132,7 @@ int main() {
     free(A_vec);
     free(B_vec);
     free(C_vec);
-
+    free(u);
     return 0;
 }
     
