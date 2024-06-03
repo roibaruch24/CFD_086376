@@ -150,6 +150,17 @@ int main() {
     for (int i = 0; i <= N; i++) {
         printf("u[%d] = %f\n", i, u[i]);
     }
+     const char *file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW0\\solution.dat";
+    FILE *file = fopen(file_path, "w");
+    if (file == NULL) {
+        fprintf(stderr, "Error opening file.\n");
+        return 1;
+    }
+    
+    for (int i = 0; i <= N; i++) {
+        fprintf(file, "%d %f\n", i, u[i]);
+    }
+    fclose(file);
     free(a);
     free(b);
     free(c);
