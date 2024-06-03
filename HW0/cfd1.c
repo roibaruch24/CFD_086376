@@ -48,7 +48,7 @@ void calc_C(float *C,float *a,float *b,float h,float N)
         C[i]=a[i]/(h*h) +b[i]/(2*h);
     }
 }
-void calc_D(float *d,float h,float N)
+void RHS(float *d,float h,float N)
 {
     for (int i = 0; i<=N; i++)
     {
@@ -59,7 +59,7 @@ typedef enum {
     Dirichlet,
     Neumann
 } OperationType;
-double LHS(float *A_vec, float *B_vec, float *C_vec, float *A, float *B, float *C,float N, OperationType boundary_conditions){
+float LHS(float *A_vec, float *B_vec, float *C_vec, float *A, float *B, float *C,float N, OperationType boundary_conditions){
     switch (boundary_conditions){
         case Dirichlet:
         for (int i = 0; i < N-2; i++) {
@@ -122,9 +122,18 @@ int main() {
     calc_A(A, a, b, h, N);
     calc_B(B, a, c, h, N);
     calc_C(C, a, b, h, N);
-    calc_D(d, h, N);
+    RHS(d, h, N);
     LHS(A_vec, B_vec, C_vec, A, B, C, N, Dirichlet);
     tridiag(A_vec, B_vec, C_vec, d, u, 0, N - 1);
+    FILE *f = fopen("C:\\Users\\roiba\\Documents\\CFD_086376\\HW0\\output.dat", "w");
+    if (f == NULL) {
+        fprintf(stderr, "Error opening file for writing\n");
+        return 1;
+    }
+    for (int i = 0; i <= N; i++) {
+        fprintf(f, "%f %f\n", i * h, u[i]);
+    }
+    fclose(f); 
     free(a);
     free(b);
     free(c);
