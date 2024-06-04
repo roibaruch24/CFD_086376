@@ -26,55 +26,55 @@ void calc_c(float *c,float h,float N)
         c[i]=(i*h)*(i*h);
     }
 }
-/*void calc_A(float *A, float *a,float *b,float h,float N)
+void calc_A(float *A_dig, float *a,float *b,float h,float N)
 {
     for (int i = 0; i<=N; i++)
-    {
-        A[i]=a[i]/(h*h) - b[i]/(2*h);
-    }
-}
-void calc_B(float *B,float *a,float *c,float h,float N)
-{
-    for (int i = 0; i<=N; i++)
-    {
-        B[i]=-2*a[i]/(h*h) +c[i]*c[i];
-    }
-}
-void calc_C(float *C,float *a,float *b,float h,float N)
-{
-    for (int i = 0; i<=N; i++)
-    {
-        C[i]=a[i]/(h*h) +b[i]/(2*h);
-    }
-}*/
-void LHS (float *a, float *b, float *c, float *A_dig, float *B_dig, float *C_dig, float h, float N)
-{
-    for (int i = 0; i <= N; i++)
     {
         A_dig[i]=a[i]/(h*h) - b[i]/(2*h);
-        B_dig[i]=-2*a[i]/(h*h) +c[i]*c[i];
+    }
+}
+void calc_B(float *B_dig,float *a,float *c,float h,float N)
+{
+    for (int i = 0; i<=N; i++)
+    {
+        B_dig[i]=-2*a[i]/(h*h) +c[i];
+    }
+}
+void calc_C(float *C_dig,float *a,float *b,float h,float N)
+{
+    for (int i = 0; i<=N; i++)
+    {
         C_dig[i]=a[i]/(h*h) +b[i]/(2*h);
     }
+}
+void LHS (float *a, float *b, float *c, float *A_dig, float *B_dig, float *C_dig, float h, float N)
+{
+    calc_A(A_dig, a, b, h, N);
+    calc_B(B_dig, a, c, h, N);
+    calc_C(C_dig, a, b, h, N);
 }
 void RHS(float *d,float h,float N)
 {
     for (int i = 0; i<=N; i++)
     {
-        d[i]=sin(2*M_PI*i*h)+cos(2*M_PI*i*h);
+        double x = 2*3.1415*i*h;
+        d[i]=sin(x)+cos(x);
     }
 }
 typedef enum {
     Dirichlet,
     Neumann
 } OperationType;
-void Boundary_conditions(float *A_dig, float *B_dig, float *C_dig, float *d, float N, float h, int *is, int *ie, OperationType Boundary_conditions)
+void Boundary_conditions(float *A_dig, float *C_dig, float *d, float N, float h, int *is, int *ie,float *u, OperationType Boundary_conditions)
 {
     switch (Boundary_conditions){
         case Dirichlet:
         *is = 1;
         *ie = N-1;
         d[*is] -= A_dig[*is]*0;
-        d[*ie] -= C_dig[*ie]*1 ;
+        d[*ie] -= C_dig[*ie]*1;
+        u[0] = 0;
+        u[(int)N] = 1;
         break;
         case Neumann:
         *is = 0;
@@ -128,7 +128,7 @@ int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is
   return(0);
 }
 int main() {
-    float N = 20; // Example value for N
+    float N =10; // Example value for N
     float h;
     int ie, is;
     float *u = (float *)malloc((N + 1) * sizeof(float));
@@ -145,18 +145,18 @@ int main() {
     calc_c(c, h, N);
     RHS(d, h, N);
     LHS(a, b, c, A_dig, B_dig, C_dig, h, N);
-    Boundary_conditions(A_dig, B_dig, C_dig, d, N, h, &is, &ie, Dirichlet);
+    Boundary_conditions(A_dig, C_dig, d, N, h, &is, &ie, u, Neumann );
     tridiag(A_dig, B_dig, C_dig, d, u, is, ie);
     for (int i = 0; i <= N; i++) {
-        printf("u[%d] = %f\n", i, u[i]);
+        //printf("u[%d] = %f\n", i, u[i]);
+        printf("B[%d] = %f\n", i, B_dig[i]);
     }
-     const char *file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW0\\solution.dat";
+    const char *file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW0\\solution.dat";
     FILE *file = fopen(file_path, "w");
     if (file == NULL) {
         fprintf(stderr, "Error opening file.\n");
         return 1;
     }
-    
     for (int i = 0; i <= N; i++) {
         fprintf(file, "%d %f\n", i, u[i]);
     }
