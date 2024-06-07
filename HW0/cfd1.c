@@ -1,13 +1,14 @@
 /* 7/6/24, Roi Baruch
 This code id HW0 in Computational Fluid Dynamics course No. 086376
-link to Git repository: 
+link to Git repository: https://github.com/roibaruch24/CFD_086376
 */
+// Including all the relevent headers:
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-// Including all the relevent headers
-int Init(int *N, char *boundary_condition, float *start,float *end,float *bc_0,float *bc_n) {
+// Init - reads the input file and initializes all the relevent valuse
+int Init(int *N, char *boundary_condition, float *start,float *end,float *bc_0,float *bc_n){
     const char *input_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW0\\input.txt";
     FILE *input = fopen(input_file_path, "rt");
     if (input == NULL) {
@@ -17,15 +18,18 @@ int Init(int *N, char *boundary_condition, float *start,float *end,float *bc_0,f
     fclose(input);
     return 0;
 }
+// clac_h - calculates the step value h
 void calc_h(float *h, float start, float end, int N)
 {
-    *h=(float)(end - start) /N; // define step size as 1/N, when N is the number of points in the interval
+    *h=(float)(end - start) / N;
 }
+// calc_a - initialize array 'a' to 1
 void calc_a(float *a, int N) {
     for (int i = 0; i <= N; i++) {
         a[i] = 1;
     }
 }
+// calc_b - initialize array 'b' to x
 void calc_b(float *b,float h,int N)
 {
     for (int i = 0;i<=N; i++)
@@ -33,6 +37,7 @@ void calc_b(float *b,float h,int N)
         b[i]=i*h;
     }
 }
+// calc_c - initialize array 'c' to x^2
 void calc_c(float *c,float h,int N)
 {
     for (int i = 0;i<=N; i++)
@@ -40,6 +45,7 @@ void calc_c(float *c,float h,int N)
         c[i]=(i*h)*(i*h);
     }
 }
+// calc_A - initialize the lower diagonal array 'A'
 void calc_A(float *A_dig, float *a,float *b,float h,int N)
 {
     for (int i = 0; i<=N; i++)
@@ -47,6 +53,7 @@ void calc_A(float *A_dig, float *a,float *b,float h,int N)
         A_dig[i]=a[i]/(h*h) - b[i]/(2*h);
     }
 }
+// calc_B - initialize the middle diagonal array 'B'
 void calc_B(float *B_dig,float *a,float *c,float h,int N)
 {
     for (int i = 0; i<=N; i++)
@@ -54,6 +61,7 @@ void calc_B(float *B_dig,float *a,float *c,float h,int N)
         B_dig[i]=-2*a[i]/(h*h) +c[i];
     }
 }
+// calc_C - initialize the upper diagonal array 'C'
 void calc_C(float *C_dig,float *a,float *b,float h,int N)
 {
     for (int i = 0; i<=N; i++)
@@ -61,12 +69,14 @@ void calc_C(float *C_dig,float *a,float *b,float h,int N)
         C_dig[i]=a[i]/(h*h) +b[i]/(2*h);
     }
 }
+// LHS - calls the the diagonals for the LHS of the function
 void LHS (float *a, float *b, float *c, float *A_dig, float *B_dig, float *C_dig, float h, int N)
 {
     calc_A(A_dig, a, b, h, N);
     calc_B(B_dig, a, c, h, N);
     calc_C(C_dig, a, b, h, N);
 }
+// RHS - initialize arry 'd' for the RHS of the function
 void RHS(float *d,float h,float N)
 {
     for (int i = 0; i<=N; i++)
@@ -75,6 +85,7 @@ void RHS(float *d,float h,float N)
         d[i] = sin(x) + cos(x);
     }
 }
+// Boundary_conditions - applies the boundary conditions
 void Boundary_conditions(float *A_dig, float *C_dig, float *d, int N, float h, int *is, int *ie, float *u, char boundary_condition, float bc_0, float bc_N) {
     if (boundary_condition == 'D')
     {
@@ -95,7 +106,7 @@ void Boundary_conditions(float *A_dig, float *C_dig, float *d, int N, float h, i
     d[*ie] -= 2*h*C_dig[*ie]*bc_N ;
     }
 }
-
+// Tridiag - is the solver
 int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is, int ie)
 {
   int i;
@@ -115,6 +126,7 @@ int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is
     }
   return(0);
 }
+// output - writes the output file
 int output (int N, float h, float *u)
 {
     const char *output_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW0\\solution.txt";
@@ -130,12 +142,13 @@ int output (int N, float h, float *u)
     return 0;
 }
 int main() {
-    
+    // declaring all the parametrs:
     float h, bc_0, bc_N, start, end;
     int ie, is, N;
     char boundary_condition;
+    // call Init function
     Init(&N, &boundary_condition, &start, &end, &bc_0, &bc_N);
-
+    // Allocate memory for arrays   
     float *u = malloc((N + 1) * sizeof(float));
     float *a = malloc((N + 1) * sizeof(float));
     float *b = malloc((N + 1) * sizeof(float));
@@ -144,7 +157,7 @@ int main() {
     float *A_dig = malloc((N + 1) * sizeof(float));
     float *B_dig = malloc((N + 1) * sizeof(float));
     float *C_dig = malloc((N + 1) * sizeof(float));
-    
+    // calls al the main functions
     calc_h(&h, start, end, N);
     calc_a(a, N);
     calc_b(b, h, N);
@@ -153,8 +166,8 @@ int main() {
     LHS(a, b, c, A_dig, B_dig, C_dig, h, N);
     Boundary_conditions(A_dig, C_dig, d, N, h, &is, &ie, u, boundary_condition, bc_0, bc_N);
     tridiag(A_dig, B_dig, C_dig, d, u, is, ie);
-    (output(N, h, u) != 0); 
-
+    output(N, h, u);
+    // Free allocated memory
     free(a);
     free(b);
     free(c);
