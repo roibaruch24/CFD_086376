@@ -15,15 +15,15 @@ ID = 'C:\Users\roiba\Documents\CFD_086376\HW0\input.txt';
 file = fopen(ID, 'wt');
 fprintf(file, '%d %d %d %c %d %d\n', N, a, b, bc, Boundary_condition_initial, Boundary_condition_final);
 fclose(file);
-x = linspace(a,b,N+1);
+x = linspace()
 %% Running the C program
 % For new users please run mex -setup in the command window and follow the
-% instructions in the Readme file on Github: https://github.com/roibaruch24/CFD_086376 
+% instructions in the Readme file on Github
 mex cfd1.c
 [u, A_dig, B_dig, C_dig, d] = cfd1();
 %% Ploting the function
 figure
-plot (x',u');
+plot (u');
 title("y(x) for N = "+num2str(N))
 xlabel("x")
 ylabel("y")

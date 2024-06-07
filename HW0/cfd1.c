@@ -7,6 +7,7 @@ link to Git repository: https://github.com/roibaruch24/CFD_086376
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include "mex.h"
 // Init - reads the input file and initializes all the relevent valuse
 int Init(int *N, char *boundary_condition, float *start,float *end,float *bc_0,float *bc_n){
     const char *input_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW0\\input.txt";
@@ -126,8 +127,8 @@ int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is
     }
   return(0);
 }
-// output - writes the output files
-int output (int N, float h, float *u, float *A_dig, float *B_dig, float *C_dig)
+//output - writes the output files (IN A COMMENT BECAUSE IM USING MATLAB)
+/*int output (int N, float h, float *u, float *A_dig, float *B_dig, float *C_dig, float *d)
 {
     const char *solution_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW0\\solution.dat";
     const char *error_calc_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW0\\error_calc.dat";
@@ -138,18 +139,30 @@ int output (int N, float h, float *u, float *A_dig, float *B_dig, float *C_dig)
     }
     for (int i = 0; i <= N; i++) {
        fprintf(solution, "%f %f\n", i * h, u[i]);
-       fprintf(error_calc, "%f %f %f %f\n", i * h, A_dig[i], B_dig[i], C_dig[i]);
+       fprintf(error_calc, "%f %f %f %f %f\n", i * h, A_dig[i], B_dig[i], C_dig[i], d[i]);
     }
     fclose(solution);
     return 0;
-}
-int main() {
+}*/
+//int main() {
+
+    void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
+    // Check input and output arguments
+    if (nrhs != 0) {
+        mexErrMsgIdAndTxt("MATLAB:mexcpp:nargin", "No input arguments required.");
+    }
+    if (nlhs !=  5) {
+        mexErrMsgIdAndTxt("MATLAB:mexcpp:nargout", "Too many output arguments.");
+    }
+
     // declaring all the parametrs:
     float h, bc_0, bc_N, start, end;
     int ie, is, N;
     char boundary_condition;
+    
     // call Init function
     Init(&N, &boundary_condition, &start, &end, &bc_0, &bc_N);
+    
     // Allocate memory for arrays   
     float *u = malloc((N + 1) * sizeof(float));
     float *a = malloc((N + 1) * sizeof(float));
@@ -159,7 +172,8 @@ int main() {
     float *A_dig = malloc((N + 1) * sizeof(float));
     float *B_dig = malloc((N + 1) * sizeof(float));
     float *C_dig = malloc((N + 1) * sizeof(float));
-    // calls al the main functions
+    
+    // calls all the main functions
     calc_h(&h, start, end, N);
     calc_a(a, N);
     calc_b(b, h, N);
@@ -168,7 +182,28 @@ int main() {
     LHS(a, b, c, A_dig, B_dig, C_dig, h, N);
     Boundary_conditions(A_dig, C_dig, d, N, h, &is, &ie, u, boundary_condition, bc_0, bc_N);
     tridiag(A_dig, B_dig, C_dig, d, u, is, ie);
-    output(N, h, u, A_dig, B_dig, C_dig);
+    //output(N, h, u, A_dig, B_dig, C_dig, d); IN A COMMENT BECAUSE IM USING MATLAB
+    
+   // Prepare output mxArrays
+    plhs[0] = mxCreateNumericMatrix(1, N + 1, mxSINGLE_CLASS, mxREAL); 
+    plhs[1] = mxCreateNumericMatrix(1, N + 1, mxSINGLE_CLASS, mxREAL); 
+    plhs[2] = mxCreateNumericMatrix(1, N + 1, mxSINGLE_CLASS, mxREAL); 
+    plhs[3] = mxCreateNumericMatrix(1, N + 1, mxSINGLE_CLASS, mxREAL); 
+    plhs[4] = mxCreateNumericMatrix(1, N + 1, mxSINGLE_CLASS, mxREAL); 
+    
+    float *output_u = (float *)mxGetData(plhs[0]);
+    float *output_A_dig = (float *)mxGetData(plhs[1]);
+    float *output_B_dig = (float *)mxGetData(plhs[2]);
+    float *output_C_dig = (float *)mxGetData(plhs[3]);
+    float *output_d = (float *)mxGetData(plhs[4]);
+    
+    for (int i = 0; i <= N; i++) {
+        output_u[i] = (float)u[i];
+        output_A_dig[i] = (float)A_dig[i];
+        output_B_dig[i] = (float)B_dig[i];
+        output_C_dig[i] = (float)C_dig[i];
+        output_d[i] = (float)d[i];
+    }
     // Free allocated memory
     free(a);
     free(b);
@@ -178,6 +213,6 @@ int main() {
     free(B_dig);
     free(C_dig);
     free(u);
-    return 0;
 }
+
     
