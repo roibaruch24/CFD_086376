@@ -1,53 +1,67 @@
+/* 7/6/24, Roi Baruch
+This code id HW0 in Computational Fluid Dynamics course No. 086376
+link to Git repository: 
+*/
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-void calc_h(float *h, float N)
-{
-    *h=1/N; // define step size as 1/N, when N is the number of points in the interval
+#include <string.h>
+// Including all the relevent headers
+int Init(int *N, char *boundary_condition, float *start,float *end,float *bc_0,float *bc_n) {
+    const char *input_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW0\\input.txt";
+    FILE *input = fopen(input_file_path, "rt");
+    if (input == NULL) {
+        return 1;
+    }
+    fscanf(input,"%d %f %f %c %f %f",N,start,end,boundary_condition,bc_0,bc_n);
+    fclose(input);
+    return 0;
 }
-void calc_a(float *a,float h,float N)
+void calc_h(float *h, float start, float end, int N)
 {
-    for (int i = 0;i<=N; i++)
-    {
-        a[i]=1;
+    *h=(float)(end - start) /N; // define step size as 1/N, when N is the number of points in the interval
+}
+void calc_a(float *a, int N) {
+    for (int i = 0; i <= N; i++) {
+        a[i] = 1;
     }
 }
-void calc_b(float *b,float h,float N)
+void calc_b(float *b,float h,int N)
 {
     for (int i = 0;i<=N; i++)
     {
         b[i]=i*h;
     }
 }
-void calc_c(float *c,float h,float N)
+void calc_c(float *c,float h,int N)
 {
     for (int i = 0;i<=N; i++)
     {
         c[i]=(i*h)*(i*h);
     }
 }
-void calc_A(float *A_dig, float *a,float *b,float h,float N)
+void calc_A(float *A_dig, float *a,float *b,float h,int N)
 {
     for (int i = 0; i<=N; i++)
     {
         A_dig[i]=a[i]/(h*h) - b[i]/(2*h);
     }
 }
-void calc_B(float *B_dig,float *a,float *c,float h,float N)
+void calc_B(float *B_dig,float *a,float *c,float h,int N)
 {
     for (int i = 0; i<=N; i++)
     {
         B_dig[i]=-2*a[i]/(h*h) +c[i];
     }
 }
-void calc_C(float *C_dig,float *a,float *b,float h,float N)
+void calc_C(float *C_dig,float *a,float *b,float h,int N)
 {
     for (int i = 0; i<=N; i++)
     {
         C_dig[i]=a[i]/(h*h) +b[i]/(2*h);
     }
 }
-void LHS (float *a, float *b, float *c, float *A_dig, float *B_dig, float *C_dig, float h, float N)
+void LHS (float *a, float *b, float *c, float *A_dig, float *B_dig, float *C_dig, float h, int N)
 {
     calc_A(A_dig, a, b, h, N);
     calc_B(B_dig, a, c, h, N);
@@ -58,60 +72,34 @@ void RHS(float *d,float h,float N)
     for (int i = 0; i<=N; i++)
     {
         double x = 2*3.1415*i*h;
-        d[i]=sin(x)+cos(x);
+        d[i] = sin(x) + cos(x);
     }
 }
-typedef enum {
-    Dirichlet,
-    Neumann
-} OperationType;
-void Boundary_conditions(float *A_dig, float *C_dig, float *d, float N, float h, int *is, int *ie,float *u, OperationType Boundary_conditions)
-{
-    switch (Boundary_conditions){
-        case Dirichlet:
+void Boundary_conditions(float *A_dig, float *C_dig, float *d, int N, float h, int *is, int *ie, float *u, char boundary_condition, float bc_0, float bc_N) {
+    if (boundary_condition == 'D')
+    {
         *is = 1;
         *ie = N-1;
-        d[*is] -= A_dig[*is]*0;
-        d[*ie] -= C_dig[*ie]*1;
-        u[0] = 0;
-        u[(int)N] = 1;
-        break;
-        case Neumann:
-        *is = 0;
-        *ie = N;
-        C_dig[*is] += A_dig[*is];
-        A_dig[*ie] += C_dig[*ie];
-        d[*is] += 2*h*A_dig[*is]*1;
-        d[*ie] -= 2*h*C_dig[*ie]*(-1) ;
-        break;
+        d[*is] -= A_dig[*is]*bc_0;
+        d[*ie] -= C_dig[*ie]*bc_N;
+        u[0] = bc_0;
+        u[(int)N] = bc_N;
+    }
+    else if (boundary_condition == 'N')
+    {
+    *is = 0;
+    *ie = N;
+    C_dig[*is] += A_dig[*is];
+    A_dig[*ie] += C_dig[*ie];
+    d[*is] += 2*h*A_dig[*is]*bc_0;
+    d[*ie] -= 2*h*C_dig[*ie]*bc_N ;
     }
 }
-/*float LHS(float *A_vec, float *B_vec, float *C_vec, float *A, float *B, float *C,float N, OperationType boundary_conditions){
-    switch (boundary_conditions){
-        case Dirichlet:
-        for (int i = 0; i < N-2; i++) {
-                A_vec[i] = A[i+2];
-                B_vec[i] = B[i+1];
-                C_vec[i] = C[i+1];
-            }
-            break;
-            B_vec[(int)N-1] = B[(int)N-1];  
-        case Neumann:
-        for (int i = 0; i < N; i++) {
-                A_vec[i] = A[i+1];
-                B_vec[i] = B[i];
-                C_vec[i] = C[i];
-            }
-            A_vec[(int)N-1] = A[(int)N] + C[(int)N];
-             C_vec[0] = A[0] + C[0];
-            break;
-    }  
-}*/
+
 int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is, int ie)
 {
   int i;
   float beta;
-
   for (i = is + 1; i <= ie; i++)
     {
       if(B_dig[i-1] == 0.) return(1);
@@ -127,40 +115,46 @@ int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is
     }
   return(0);
 }
+int output (int N, float h, float *u)
+{
+    const char *output_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW0\\solution.txt";
+    FILE *solution = fopen(output_file_path, "wt");
+    if (solution == NULL) {
+        return 1;
+    }
+    for (int i = 0; i <= N; i++) {
+       fprintf(solution, "%f %f\n", i * h, u[i]);
+        printf("%f\n", u[i]);
+    }
+    fclose(solution);
+    return 0;
+}
 int main() {
-    float N =10; // Example value for N
-    float h;
-    int ie, is;
-    float *u = (float *)malloc((N + 1) * sizeof(float));
-    float *a = (float *)malloc((N + 1) * sizeof(float));
-    float *b = (float *)malloc((N + 1) * sizeof(float));
-    float *c = (float *)malloc((N + 1) * sizeof(float));
-    float *d = (float *)malloc((N + 1) * sizeof(float));
-    float *A_dig = (float *)malloc((N+1) * sizeof(float));
-    float *B_dig = (float *)malloc((N+1) * sizeof(float));
-    float *C_dig = (float *)malloc((N+1) * sizeof(float));
-    calc_h(&h, N);
-    calc_a(a, h, N);
+    
+    float h, bc_0, bc_N, start, end;
+    int ie, is, N;
+    char boundary_condition;
+    Init(&N, &boundary_condition, &start, &end, &bc_0, &bc_N);
+
+    float *u = malloc((N + 1) * sizeof(float));
+    float *a = malloc((N + 1) * sizeof(float));
+    float *b = malloc((N + 1) * sizeof(float));
+    float *c = malloc((N + 1) * sizeof(float));
+    float *d = malloc((N + 1) * sizeof(float));
+    float *A_dig = malloc((N + 1) * sizeof(float));
+    float *B_dig = malloc((N + 1) * sizeof(float));
+    float *C_dig = malloc((N + 1) * sizeof(float));
+    
+    calc_h(&h, start, end, N);
+    calc_a(a, N);
     calc_b(b, h, N);
     calc_c(c, h, N);
     RHS(d, h, N);
     LHS(a, b, c, A_dig, B_dig, C_dig, h, N);
-    Boundary_conditions(A_dig, C_dig, d, N, h, &is, &ie, u, Neumann );
+    Boundary_conditions(A_dig, C_dig, d, N, h, &is, &ie, u, boundary_condition, bc_0, bc_N);
     tridiag(A_dig, B_dig, C_dig, d, u, is, ie);
-    for (int i = 0; i <= N; i++) {
-        //printf("u[%d] = %f\n", i, u[i]);
-        printf("B[%d] = %f\n", i, B_dig[i]);
-    }
-    const char *file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW0\\solution.dat";
-    FILE *file = fopen(file_path, "w");
-    if (file == NULL) {
-        fprintf(stderr, "Error opening file.\n");
-        return 1;
-    }
-    for (int i = 0; i <= N; i++) {
-        fprintf(file, "%d %f\n", i, u[i]);
-    }
-    fclose(file);
+    (output(N, h, u) != 0); 
+
     free(a);
     free(b);
     free(c);
