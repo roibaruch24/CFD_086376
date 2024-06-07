@@ -8,5 +8,3 @@ N, the boundary conditions, and the interval [a b]. Then, the script writes the 
 Then, all the relevant graphs are plotted.
 
 The code not using the Matlab script can be found here: https://github.com/roibaruch24/CFD_086376/commit/84007d75f40ed52559612d460b787416617591ba
-
-The code using the Matlab script can be found here: https://github.com/roibaruch24/CFD_086376/commit/96ea68fa531ecec515f5b97705841f9b3c92e146
