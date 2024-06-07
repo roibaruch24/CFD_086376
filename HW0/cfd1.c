@@ -126,17 +126,19 @@ int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is
     }
   return(0);
 }
-// output - writes the output file
-int output (int N, float h, float *u)
+// output - writes the output files
+int output (int N, float h, float *u, float *A_dig, float *B_dig, float *C_dig)
 {
-    const char *output_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW0\\solution.txt";
-    FILE *solution = fopen(output_file_path, "wt");
+    const char *solution_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW0\\solution.dat";
+    const char *error_calc_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW0\\error_calc.dat";
+    FILE *solution = fopen(solution_file_path, "wt");
+    FILE *error_calc = fopen(error_calc_file_path, "wt");
     if (solution == NULL) {
         return 1;
     }
     for (int i = 0; i <= N; i++) {
        fprintf(solution, "%f %f\n", i * h, u[i]);
-        printf("%f\n", u[i]);
+       fprintf(error_calc, "%f %f %f %f\n", i * h, A_dig[i], B_dig[i], C_dig[i]);
     }
     fclose(solution);
     return 0;
@@ -166,7 +168,7 @@ int main() {
     LHS(a, b, c, A_dig, B_dig, C_dig, h, N);
     Boundary_conditions(A_dig, C_dig, d, N, h, &is, &ie, u, boundary_condition, bc_0, bc_N);
     tridiag(A_dig, B_dig, C_dig, d, u, is, ie);
-    output(N, h, u);
+    output(N, h, u, A_dig, B_dig, C_dig);
     // Free allocated memory
     free(a);
     free(b);
