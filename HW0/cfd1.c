@@ -127,8 +127,13 @@ int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is
     }
   return(0);
 }
+<<<<<<< HEAD
 //output - writes the output files (IN A COMMENT BECAUSE IM USING MATLAB)
 /*int output (int N, float h, float *u, float *A_dig, float *B_dig, float *C_dig, float *d)
+=======
+// output - writes the output files
+int output (int N, float h, float *u, float *A_dig, float *B_dig, float *C_dig)
+>>>>>>> 3fd84f1fe0b142cdb546e485f2e73eee9f7f72c5
 {
     const char *solution_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW0\\solution.dat";
     const char *error_calc_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW0\\error_calc.dat";
@@ -139,7 +144,11 @@ int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is
     }
     for (int i = 0; i <= N; i++) {
        fprintf(solution, "%f %f\n", i * h, u[i]);
+<<<<<<< HEAD
        fprintf(error_calc, "%f %f %f %f %f\n", i * h, A_dig[i], B_dig[i], C_dig[i], d[i]);
+=======
+       fprintf(error_calc, "%f %f %f %f\n", i * h, A_dig[i], B_dig[i], C_dig[i]);
+>>>>>>> 3fd84f1fe0b142cdb546e485f2e73eee9f7f72c5
     }
     fclose(solution);
     return 0;
@@ -182,6 +191,7 @@ int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is
     LHS(a, b, c, A_dig, B_dig, C_dig, h, N);
     Boundary_conditions(A_dig, C_dig, d, N, h, &is, &ie, u, boundary_condition, bc_0, bc_N);
     tridiag(A_dig, B_dig, C_dig, d, u, is, ie);
+<<<<<<< HEAD
     //output(N, h, u, A_dig, B_dig, C_dig, d); IN A COMMENT BECAUSE IM USING MATLAB
     
    // Prepare output mxArrays
@@ -204,6 +214,9 @@ int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is
         output_C_dig[i] = (float)C_dig[i];
         output_d[i] = (float)d[i];
     }
+=======
+    output(N, h, u, A_dig, B_dig, C_dig);
+>>>>>>> 3fd84f1fe0b142cdb546e485f2e73eee9f7f72c5
     // Free allocated memory
     free(a);
     free(b);
