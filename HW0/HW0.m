@@ -1,7 +1,7 @@
 clc, clear;
 %% Input parameters
 N = 20;
-Boundary_condition = 'Dirichlet'; % can be either Dirichlet or Neumann
+Boundary_condition = 'Neumann'; % can be either Dirichlet or Neumann
 if strcmp(Boundary_condition, 'Neumann')
     bc = 'N';
 elseif strcmp(Boundary_condition, 'Dirichlet')
@@ -9,8 +9,8 @@ elseif strcmp(Boundary_condition, 'Dirichlet')
 end
  a = 0; % starting x value for the calculation 
  b = 1; % ending x value for the calculation 
-Boundary_condition_initial = 0; % for Dirichlet it's Y_0 and for  Neumann its Y'_0
-Boundary_condition_final = 1; % for Dirichlet it's Y_N and for  Neumann its Y'_N
+Boundary_condition_initial = 1; % for Dirichlet it's Y_0 and for  Neumann its Y'_0
+Boundary_condition_final = -1; % for Dirichlet it's Y_N and for  Neumann its Y'_N
 ID = 'C:\Users\roiba\Documents\CFD_086376\HW0\input.txt';
 file = fopen(ID, 'wt');
 fprintf(file, '%d %d %d %c %d %d\n', N, a, b, bc, Boundary_condition_initial, Boundary_condition_final);
