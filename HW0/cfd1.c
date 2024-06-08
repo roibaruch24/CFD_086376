@@ -109,10 +109,14 @@ void Boundary_conditions(float *A_dig, float *C_dig, float *d, int N, float h, i
     }
 }
 // initialize A, B, C vectors for error calculation
-void error_calc(float *A_dig, float *B_dig, float *C_dig,float *A_dig_er, float *B_dig_er, float *C_dig_er ){
-    A_dig_er = A_dig;
-    B_dig_er = B_dig;
-    C_dig_er = C_dig; 
+void error_calc(float *A_dig, float *B_dig, float *C_dig, float *d, float *A_dig_er, float *B_dig_er, float *C_dig_er, float *d_er, int N ){
+    for (int i = 0; i<=N; i++)
+    {
+    A_dig_er[i] = A_dig[i];
+    B_dig_er[i] = B_dig[i];
+    C_dig_er[i] = C_dig[i];
+    d_er[i] = d[i]; 
+    }
 }
 // Tridiag - is the solver
 int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is, int ie)
@@ -182,6 +186,7 @@ int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is
     float *A_dig_er = malloc((N + 1) * sizeof(float));
     float *B_dig_er = malloc((N + 1) * sizeof(float));
     float *C_dig_er = malloc((N + 1) * sizeof(float));
+    float *d_er = malloc((N + 1) * sizeof(float));
     
     // calls all the main functions
     calc_h(&h, start, end, N);
@@ -191,7 +196,7 @@ int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is
     RHS(d, h, N);
     LHS(a, b, c, A_dig, B_dig, C_dig, h, N);
     Boundary_conditions(A_dig, C_dig, d, N, h, &is, &ie, u, boundary_condition, bc_0, bc_N);
-    error_calc(A_dig, B_dig, C_dig, A_dig_er, B_dig_er, C_dig_er);
+    error_calc(A_dig, B_dig, C_dig, d, A_dig_er, B_dig_er, C_dig_er, d_er, N);
     tridiag(A_dig, B_dig, C_dig, d, u, is, ie);
     //output(N, h, u, A_dig, B_dig, C_dig, d); IN A COMMENT BECAUSE IM USING MATLAB
     
@@ -206,14 +211,14 @@ int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is
     float *output_A_dig = (float *)mxGetData(plhs[1]);
     float *output_B_dig = (float *)mxGetData(plhs[2]);
     float *output_C_dig = (float *)mxGetData(plhs[3]);
-    float *output_d = (float *)mxGetData(plhs[4]);
+    float *output_d_er = (float *)mxGetData(plhs[4]);
     
     for (int i = 0; i <= N; i++) {
         output_u[i] = (float)u[i];
         output_A_dig[i] = (float)A_dig_er[i];
         output_B_dig[i] = (float)B_dig_er[i];
         output_C_dig[i] = (float)C_dig_er[i];
-        output_d[i] = (float)d[i];
+        output_d_er[i]  = (float)d_er[i];
     }
     // Free allocated memory
     free(a);
@@ -223,6 +228,10 @@ int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is
     free(A_dig);
     free(B_dig);
     free(C_dig);
+    free(A_dig_er);
+    free(B_dig_er);
+    free(C_dig_er);
+    free(d_er);
     free(u);
 }
 

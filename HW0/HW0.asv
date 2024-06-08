@@ -1,11 +1,11 @@
 clc, clear;
 %% Input parameters
-N = 20;
+N = 100;
 Boundary_condition = 'Dirichlet';     % can be either Dirichlet or Neumann
-a = 0;                              % starting x value for the calculation 
-b = 1;                              % ending x value for the calculation 
-Boundary_condition_initial = 0;     % for Dirichlet it's Y_0 and for  Neumann its Y'_0
-Boundary_condition_final = 1;      % for Dirichlet it's Y_N and for  Neumann its Y'_N
+a = 0;                                % starting x value for the calculation 
+b = 1;                                % ending x value for the calculation 
+Boundary_condition_initial = 0;       % for Dirichlet it's Y_0 and for  Neumann its Y'_0
+Boundary_condition_final = 1;         % for Dirichlet it's Y_N and for  Neumann its Y'_N
 %% Writing the input.txt file
 if strcmp(Boundary_condition, 'Neumann')
     bc = 'N';
@@ -32,6 +32,7 @@ ylabel("y")
 grid on
 %% error calculation 
 N_vec=linspace(1,N,N);
+h=(b-a)/N;
 switch Boundary_condition
     case 'Dirichlet'
         low_dig = diag(A_dig(3:N-1),-1);
@@ -39,21 +40,23 @@ switch Boundary_condition
         high_dig = diag(C_dig(2:N-2),1);
         LHS  = low_dig + mid_dig + high_dig;
         figure;
-        plot(N_vec(1:N-2),LHS*u(2:N-1)'-d(2:N-1)');
+        error =  LHS*u(2:N-1)'-d(2:N-1)';
+        plot(N_vec(1:N-3),error(1:end-1));
         title("Error for N = "+num2str(N))
         subtitle(['Boundary condition are: ' Boundary_condition])
-        xlabel("N")
+        xlabel("X")
         ylabel("Error")
         grid on;
     case 'Neumann'
         low_dig = diag(A_dig(2:N),-1);
         mid_dig = diag(B_dig(1:N));
         high_dig = diag(C_dig(1:N-1),1);
-        LHS  = low_dig + mid_dig + high_dig;figure
-        plot(N_vec,LHS*u(1:N)'-d(1:N)')
+        LHS  = low_dig + mid_dig + high_dig;
+        figure
+        plot(N_vec,(LHS*u(1:N)'-d(1:N)'))
         title("Error for N = "+num2str(N))
         subtitle(['Boundary condition are: ' Boundary_condition])
-        xlabel("N")
+        xlabel("X")
         ylabel("Error")
         grid on;
 end
