@@ -108,6 +108,12 @@ void Boundary_conditions(float *A_dig, float *C_dig, float *d, int N, float h, i
     d[*ie] -= 2*h*C_dig[*ie]*bc_N ;
     }
 }
+// initialize A, B, C vectors for error calculation
+void error_calc(float *A_dig, float *B_dig, float *C_dig,float *A_dig_er, float *B_dig_er, float *C_dig_er ){
+    A_dig_er = A_dig;
+    B_dig_er = B_dig;
+    C_dig_er = C_dig; 
+}
 // Tridiag - is the solver
 int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is, int ie)
 {
@@ -173,6 +179,9 @@ int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is
     float *A_dig = malloc((N + 1) * sizeof(float));
     float *B_dig = malloc((N + 1) * sizeof(float));
     float *C_dig = malloc((N + 1) * sizeof(float));
+    float *A_dig_er = malloc((N + 1) * sizeof(float));
+    float *B_dig_er = malloc((N + 1) * sizeof(float));
+    float *C_dig_er = malloc((N + 1) * sizeof(float));
     
     // calls all the main functions
     calc_h(&h, start, end, N);
@@ -182,6 +191,7 @@ int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is
     RHS(d, h, N);
     LHS(a, b, c, A_dig, B_dig, C_dig, h, N);
     Boundary_conditions(A_dig, C_dig, d, N, h, &is, &ie, u, boundary_condition, bc_0, bc_N);
+    error_calc(A_dig, B_dig, C_dig, A_dig_er, B_dig_er, C_dig_er);
     tridiag(A_dig, B_dig, C_dig, d, u, is, ie);
     //output(N, h, u, A_dig, B_dig, C_dig, d); IN A COMMENT BECAUSE IM USING MATLAB
     
@@ -200,9 +210,9 @@ int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is
     
     for (int i = 0; i <= N; i++) {
         output_u[i] = (float)u[i];
-        output_A_dig[i] = (float)A_dig[i];
-        output_B_dig[i] = (float)B_dig[i];
-        output_C_dig[i] = (float)C_dig[i];
+        output_A_dig[i] = (float)A_dig_er[i];
+        output_B_dig[i] = (float)B_dig_er[i];
+        output_C_dig[i] = (float)C_dig_er[i];
         output_d[i] = (float)d[i];
     }
     // Free allocated memory
