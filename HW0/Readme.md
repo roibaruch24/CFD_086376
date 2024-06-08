@@ -7,7 +7,8 @@ N, the boundary conditions, and the interval [a b]. Then, the script writes the 
 
 Then, all the relevant graphs are plotted.
 
-The code not using the Matlab script can be found here: https://github.com/roibaruch24/CFD_086376/commit/84007d75f40ed52559612d460b787416617591ba
+The code not using the Matlab script can be found here: https://github.com/roibaruch24/CFD_086376/commit/96ea68fa531ecec515f5b97705841f9b3c92e146?diff=unified&w=0# 
+press expand up/down/all to see the entire code.
 
 For new users, either use the non-Matlab (Recommended for easy use) version linked above or follow these steps to be able to run the C program through Matlab:
 
