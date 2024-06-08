@@ -19,7 +19,7 @@ int Init(int *N, char *boundary_condition, float *start,float *end,float *bc_0,f
     fclose(input);
     return 0;
 }
-// clac_h - calculates the step value h
+// calc_h - calculates the step value h
 void calc_h(float *h, float start, float end, int N)
 {
     *h=(float)(end - start) / N;
@@ -158,14 +158,6 @@ int tridiag(float *A_dig, float *B_dig, float *C_dig, float *d, float *u, int is
 //int main() {
 
     void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
-    // Check input and output arguments
-    if (nrhs != 0) {
-        mexErrMsgIdAndTxt("MATLAB:mexcpp:nargin", "No input arguments required.");
-    }
-    if (nlhs !=  5) {
-        mexErrMsgIdAndTxt("MATLAB:mexcpp:nargout", "Too many output arguments.");
-    }
-
     // declaring all the parametrs:
     float h, bc_0, bc_N, start, end;
     int ie, is, N;
