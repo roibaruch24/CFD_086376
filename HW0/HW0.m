@@ -1,12 +1,12 @@
-clc, clear;
+clc, clear, close all;
 %% Input parameters
 Boundary_condition = 'Neumann';       % can be either Dirichlet or Neumann
 a = 0;                                % starting x value for the calculation 
 b = 1;                                % ending x value for the calculation 
 Boundary_condition_initial = 1;       % for Dirichlet it's Y_0 and for  Neumann its Y'_0
 Boundary_condition_final   = -1;      % for Dirichlet it's Y_N and for  Neumann its Y'_N
-for N = [50 100 200]
-    for precision = {'single', 'double'}
+for N = [500]
+    for precision = {'single'}
         %% Writing the input.txt file
         if strcmp(Boundary_condition, 'Neumann')
             bc = 'N';
@@ -29,9 +29,11 @@ for N = [50 100 200]
             [u, A_dig, B_dig, C_dig, d] = cfd1_double_precision();
         end
         %% Ploting the function
-        figure()
-        plot (x',u');
-        title("y(x) for N = "+num2str(N))
+        figure(1)
+        plot(x', u', 'DisplayName', ['N = ' num2str(N) ', Precision: ' char(precision)]);
+        legend show
+        hold on;
+        title("y(x)")
         subtitle(['Boundary condition are: ' Boundary_condition])
         xlabel("x")
         ylabel("y")
@@ -47,12 +49,11 @@ for N = [50 100 200]
                 LHS  = low_dig + mid_dig + high_dig;
                 figure(2);
                 error =  LHS*u(2:N-1)'-d(2:N-1)';
-                plot(N_vec(1:N-3),error(1:end-1), 'DisplayName', ['N = '  num2str(N)], 'LineWidth', 1);
+                semilogy(h*N_vec(1:N-3), abs(error(1:end-1)), 'DisplayName', ['N = ' num2str(N) ', Precision: ' char(precision)], 'LineWidth', 1);
                 legend show
                 hold on;
-                title("Error for N = "+num2str(N))
-                subtitle([precision ' precision, Boundary condition are: ' Boundary_condition])
-                subtitle()
+                title("Error on a logarithmic scale")
+                subtitle(['Boundary condition are: ' Boundary_condition])
                 xlabel("N")
                 ylabel("Error")
                 grid on;
@@ -63,11 +64,11 @@ for N = [50 100 200]
                 LHS  = low_dig + mid_dig + high_dig;
                 figure(3);
                 error = LHS*u(1:N)'-d(1:N)';
-                plot(N_vec(1:end-1),error(1:end-1), 'DisplayName', ['N = '  num2str(N)], 'LineWidth', 1);
+                semilogy(h*N_vec(1:end-1), abs(error(1:end-1)), 'DisplayName', ['N = ' num2str(N) ', Precision: ' char(precision)], 'LineWidth', 1);
                 legend show
                 hold on;
-                title("Error for N = "+num2str(N))
-                subtitle([precision ' precision, Boundary condition are: ' Boundary_condition])
+                title("Error on a logarithmic scale")
+                subtitle(['Boundary condition are: ' Boundary_condition])
                 xlabel("N")
                 ylabel("Error")
                 grid on;

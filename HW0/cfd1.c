@@ -77,7 +77,7 @@ void LHS (float *a, float *b, float *c, float *A_dig, float *B_dig, float *C_dig
     calc_B(B_dig, a, c, h, N);
     calc_C(C_dig, a, b, h, N);
 }
-// RHS - initialize arry 'd' for the RHS of the function
+// RHS - initialize array 'd' for the RHS of the function
 void RHS(float *d,float h,float N)
 {
     for (int i = 0; i<=N; i++)
