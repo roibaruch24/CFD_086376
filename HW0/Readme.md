@@ -7,7 +7,7 @@ N, the boundary conditions, and the interval [a b]. Then, the script writes the 
 
 Then, all the relevant graphs are plotted.
 
-The code not using the Matlab script can be found here: https://github.com/roibaruch24/CFD_086376/commit/96ea68fa531ecec515f5b97705841f9b3c92e146?diff=unified&w=0# 
+**The code not using the Matlab script can be found here**: https://github.com/roibaruch24/CFD_086376/commit/96ea68fa531ecec515f5b97705841f9b3c92e146?diff=unified&w=0# 
 
 Press expand all to see the entire code:![image](https://github.com/roibaruch24/CFD_086376/assets/171028386/2861fe3c-6229-4d78-80ff-038450814d03)
 
