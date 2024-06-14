@@ -5,7 +5,7 @@ a = 0;                                % starting x value for the calculation
 b = 1;                                % ending x value for the calculation 
 Boundary_condition_initial = 1;       % for Dirichlet it's Y_0 and for  Neumann its Y'_0
 Boundary_condition_final   = -1;      % for Dirichlet it's Y_N and for  Neumann its Y'_N
-for N = [100 500 1000]
+for N = [10]
     for precision = {'single','double'}
         %% Writing the input.txt file
         if strcmp(Boundary_condition, 'Neumann')
