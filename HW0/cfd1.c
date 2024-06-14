@@ -82,7 +82,7 @@ void RHS(float *d,float h,float N)
 {
     for (int i = 0; i<=N; i++)
     {
-        double x = 2*3.1415*i*h;
+        double x = 2*3.14159265358979323846264338327950288*i*h;
         d[i] = sin(x) + cos(x);
     }
 }
