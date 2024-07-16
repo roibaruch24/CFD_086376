@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-//#define PI  3.14159265359
+#define PI  3.14159265359
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 // Makes a 2D array to a vector
 int offset2d(int i, int j, double ni) {
@@ -41,7 +42,6 @@ double airfoil(double *x, int ni, int i, int up_down, double t) {
                               0.2843 * pow(x_int * x_val, 3) -
                               0.1015 * pow(x_int * x_val, 4));
 }
-
 void j_min(double *x, double *y, int ni, double dx, double t, int tel, int le, int teu, double xsf) {
     int k = 1;
     for (int i = tel; i <= le; i++) {
@@ -65,7 +65,6 @@ void j_min(double *x, double *y, int ni, double dx, double t, int tel, int le, i
 void i_max(double *y, double *x, double ni, double ysf, int le, double dy) {
     y[offset2d(50, 0, ni)] = 0;
     y[offset2d(50, 1, ni)] = dy;
-    //x[offset2d(51, 0, ni)] = 0;
     for (int j = 2; j <= 25; j++) {
         y[offset2d(50, j, ni)] = y[offset2d(50, j - 1, ni)] + ysf * (y[offset2d(50, j - 1, ni)] - y[offset2d(50, j - 2, ni)]);
     }
@@ -73,7 +72,6 @@ void i_max(double *y, double *x, double ni, double ysf, int le, double dy) {
         x[offset2d(50, j, ni)] = x[offset2d(50, 0, ni)];
     }
 }
-
 void i_min(double *y, double *x, double ni, int le, int dy) {
     for (int j = 1; j <= 25; j++) {
         y[offset2d(0, j, ni)] = -y[offset2d(50, j, ni)];
@@ -113,107 +111,118 @@ void j_max(double *x,double *y,double  jmax,int  ni)
 }
 void interp_j(double *x,double *y,int i,int j,int jmax,int ni)
 {
-    //double  mx = (x[offset2d(i,jmax,ni)]-x[offset2d(i,0,ni)])/jmax;
     double  my = (y[offset2d(i,jmax,ni)]-y[offset2d(i,0,ni)])/jmax;
-    //x[offset2d(i,j,ni)] = mx*j+x[offset2d(i,0,ni)];
     y[offset2d(i,j,ni)] = my*j+y[offset2d(i,0,ni)];
 }
-
 void interp_i(double *x,int i,int j,int imax,int  ni)
 {
     double m_x = (x[offset2d(imax,j,ni)]-x[offset2d(0,j,ni)])/imax;
-    //double const m_y = (y[offset2d(imax,j,ni)]-y[offset2d(0,j,ni)])/imax;
     x[offset2d(i,j,ni)] = m_x*i+x[offset2d(0,j,ni)];
-    //y[offset2d(i,j,ni)] = m_y*i+y[offset2d(0,j,ni)];
 }
-double x_ksi (double *x, int ni, int i, int j){
-    return ((x[offset2d(i+1,j,ni)]-x[offset2d(i-1,j,ni)])/2);
+void dx_ksi (double *x,double *x_ksi, int ni, int i, int j){
+    x_ksi[offset2d(i,j,ni)] = ((x[offset2d(i+1,j,ni)]-x[offset2d(i-1,j,ni)])/2);
 }
-double x_etta (double *x, int ni, int i, int j){
-    return ((x[offset2d(i,j+1,ni)]-x[offset2d(i,j-1,ni)])/2);
+void dx_etta (double *x,double *x_etta, int ni, int i, int j){
+    x_etta[offset2d(i,j,ni)] = ((x[offset2d(i,j+1,ni)]-x[offset2d(i,j-1,ni)])/2);
 }
-double y_ksi (double *y, int ni, int i, int j){
-    return ((y[offset2d(i+1,j,ni)]-y[offset2d(i-1,j,ni)])/2);
+void dy_ksi (double *y,double *y_ksi, int ni, int i, int j){
+     y_ksi[offset2d(i,j,ni)] = ((y[offset2d(i+1,j,ni)]-y[offset2d(i-1,j,ni)])/2);
 }
-double y_etta (double *y, int ni, int i, int j){
-    return ((y[offset2d(i,j+1,ni)]-y[offset2d(i,j-1,ni)])/2);
+void dy_etta (double *y, double *y_etta, int ni, int i, int j){
+      y_etta[offset2d(i,j,ni)] = ((y[offset2d(i,j+1,ni)]-y[offset2d(i,j-1,ni)])/2);
+}
+void dx_ksi_ksi (double *x,double *x_ksi_ksi, int ni, int i, int j){
+    x_ksi_ksi[offset2d(i,j,ni)] = (x[offset2d(i+1,j,ni)]-2*x[offset2d(i,j,ni)]+x[offset2d(i-1,j,ni)]);
+}
+void dx_etta_etta (double *x, double *x_etta_etta, int ni, int i, int j){
+     x_etta_etta[offset2d(i,j,ni)] = (x[offset2d(i,j+1,ni)]-2*x[offset2d(i,j,ni)]+x[offset2d(i,j-1,ni)]);
+}
+void dy_ksi_ksi (double *y, double *y_ksi_ksi, int ni, int i, int j){
+     y_ksi_ksi[offset2d(i,j,ni)] = (y[offset2d(i+1,j,ni)]-2*y[offset2d(i,j,ni)]+y[offset2d(i-1,j,ni)]);
+}
+void dy_etta_etta (double *y, double *y_etta_etta, int ni, int i, int j){
+     y_etta_etta[offset2d(i,j,ni)] = (y[offset2d(i,j+1,ni)]-2*y[offset2d(i,j,ni)]+y[offset2d(i,j-1,ni)]);
+}
+void calc_derivatives(double *x_ksi, double *x_etta, double *y_ksi, double *y_etta, double *x_ksi_ksi, double *x_etta_etta,double *y_ksi_ksi, double *y_etta_etta, double *x, double *y, int ni, int imax, int jmax){
+    for (int i = 0; i <= imax; i++){
+        for (int j = 0; j <= jmax; j++){
+            dx_ksi(x, x_ksi, ni, i, j);
+            dx_etta(x, x_etta, ni, i, j);
+            dy_ksi(y, y_ksi, ni, i, j);
+            dy_etta(y, y_etta, ni, i, j);
+            dx_ksi_ksi(x, x_ksi_ksi, ni, i, j);
+            dx_etta_etta(x, x_etta_etta, ni, i, j);
+            dy_ksi_ksi(y, y_ksi_ksi, ni, i, j);
+            dy_etta_etta(y, y_etta_etta, ni, i, j);       
+        }
+    }
 }
 
+void calc_alpha (double *x_etta, double *y_etta,double *alpha,  int ni, int i, int j){
+    alpha[offset2d(i,j,ni)] = pow(y_etta[offset2d(i,j,ni)],2)+pow(x_etta[offset2d(i,j,ni)],2);}
 
-double x_ksi_ksi (double *x, int ni, int i, int j){
-    return (x[offset2d(i+1,j,ni)]-2*x[offset2d(i,j,ni)]+x[offset2d(i-1,j,ni)]);
+void calc_beta (double *x_etta, double *y_etta, double *x_ksi, double *y_ksi, double *beta,  int ni, int i, int j){
+    beta[offset2d(i,j,ni)] = x_etta[offset2d(i,j,ni)]*x_ksi[offset2d(i,j,ni)] + y_etta[offset2d(i,j,ni)]*y_ksi[offset2d(i,j,ni)];
 }
-double x_etta_etta (double *x, int ni, int i, int j){
-    return (x[offset2d(i,j+1,ni)]-2*x[offset2d(i,j,ni)]+x[offset2d(i,j-1,ni)]);
-}
-double y_ksi_ksi (double *y, int ni, int i, int j){
-    return (y[offset2d(i+1,j,ni)]-2*y[offset2d(i,j,ni)]+y[offset2d(i-1,j,ni)]);
-}
-double y_etta_etta (double *y, int ni, int i, int j){
-    return (y[offset2d(i,j+1,ni)]-2*y[offset2d(i,j,ni)]+y[offset2d(i,j-1,ni)]);
-}
-
-double calc_alpha (double *x ,double *y, int ni, int i, int j){
-    double x_val_ksi = x_ksi(x, ni, i, j);
-    double y_val_ksi = y_ksi(x, ni, i, j);
-    return (pow(x_val_ksi,2)+pow(y_val_ksi,2));
-}
-double calc_beta (double *x ,double *y, int ni, int i, int j){
-    double x_val_ksi = x_ksi(x, ni, i, j);
-    double y_val_ksi = y_ksi(x, ni, i, j);
-    double x_val_etta = x_etta(x, ni, i, j);
-    double y_val_etta = y_etta(x, ni, i, j);
-    return (x_val_etta*x_val_ksi+y_val_etta*y_val_ksi);
-}
-double calc_gamma (double *x ,double *y, int ni, int i, int j){
-    double x_val_etta = x_etta(x, ni, i, j);
-    double y_val_etta = y_etta(x, ni, i, j);
-    return (pow(x_val_etta,2)+pow(y_val_etta,2));
+void calc_gamma (double *x_ksi, double *y_ksi,double *gamma,  int ni, int i, int j){
+    gamma[offset2d(i,j,ni)] = pow(y_ksi[offset2d(i,j,ni)],2)+pow(x_ksi[offset2d(i,j,ni)],2);
 }   
 
-void Calc_A (double *x, double *y, int ni,int sweep, int imax, double *A, int j, int jmax, int i){
+void calc_greek(double *x_etta, double *y_etta, double *x_ksi, double *y_ksi,double *alpha, double *beta, double *gamma, int ni, int imax, int jmax){
+    for(int i = 0; i<= imax; i++){
+        for (int j = 0; j <= jmax; j++){
+             calc_alpha (x_etta, y_etta,alpha, ni, i, j);
+             calc_beta (x_etta, y_etta, x_ksi, y_ksi, beta, ni, i, j);
+             calc_gamma (x_ksi, y_ksi, gamma, ni, i, j);
+        }
+    }
+}
+void Calc_A (double *alpha, double *gamma,  int ni,int sweep, int imax, double *A, int j, int jmax, int i){
     if (sweep  == 1){
         for (int i = 0; i <= imax; i++){
-            A[i] = -1*calc_alpha(x, y, ni, i, j);
+            A[i] = -alpha[offset2d(i,j,ni)];
         }
     }
     else{
         for (int j = 0; j <= jmax; j++)
         {
-            A[j] = -1*calc_gamma(x, y, ni, i, j);
+            A[j] = -1*gamma[offset2d(i,j,ni)];
         }
     }
-
 }
-void Calc_B (double *x, double *y, int ni,int sweep, int imax, double *B, int j, int jmax, int i, double r){
+void Calc_B (double *alpha, double *gamma, int ni,int sweep, int imax, double *B, int j, int jmax, int i, double r){
     if (sweep  == 1){
         for (int i = 0; i <= imax; i++){
-            B[i] = r + 2*calc_alpha(x, y, ni, i, j);
+            B[i] = r + 2*alpha[offset2d(i,j,ni)];
         }
     }
     else{
         for (int j = 0; j <= jmax; j++)
         {
-             B[j] = r + 2*calc_gamma(x, y, ni, i, j);
+             B[j] = r + 2*gamma[offset2d(i,j,ni)];
         }
     }
 }
-void Calc_C (double *x, double *y, int ni,int sweep, int imax, double *C, int j, int jmax, int i){
+void Calc_C (double *alpha, double *gamma,  int ni, int sweep, int imax, double *C, int j, int jmax, int i){
     if (sweep  == 1){
         for (int i = 0; i <= imax; i++){
-            C[i] = -1*calc_alpha(x, y, ni, i, j);
+            C[i] = -1*alpha[offset2d(i,j,ni)];
         }
     }
     else{
         for (int j = 0; j <= jmax; j++)
         {
-            C[j] = -1*calc_gamma(x, y, ni, i, j);
+            C[j] = -1*gamma[offset2d(i,j,ni)];
         }
     }
+}
+void LHS (double *alpha, double *gamma, int ni, int sweep, int imax,double *A, double *B, double *C, int j, int jmax, int i, int r){
+    Calc_A (alpha, gamma, ni, sweep, imax, A, j, jmax,i);
+    Calc_B (alpha, gamma, ni, sweep, imax, B, j, jmax, i, r);
+    Calc_C (alpha, gamma, ni, sweep, imax, C, j, jmax,i);
 
 }
-
-void calc_psi_boundary (double *x, double *y, int ni, int sweep, double *psi, int jmax, int imax){
+/*void calc_psi_boundary (double *x, double *y, int ni, int sweep, double *psi, int jmax, int imax){
     for (int i = 0; i<= imax; i+= imax){ // running for either i = 0 or i = imax
         for (int j = 0; j <= jmax; j++){
             double y_e = y_etta(y, ni, i ,j);
@@ -308,6 +317,7 @@ void L_operator(double *x, double *y, double *var, double *L, int ni, int i, int
         -0.5*beta*(x_i_1_j_1-x_i_1_j_m1-x_i_m1_j_1+x_i_m1_j_m1)
         +gamma*((x_i_j_1-2*x_i_j+x_i_j_m1)+0.5*psi[offset2d(i,j,ni)]*(x_i_j_1-x_i_j_m1));    
 }
+*/
  
 
 
@@ -324,10 +334,21 @@ int main() {
     double *y =malloc((ni*nj) *sizeof(double));
     double *psi =malloc((ni*nj) *sizeof(double));
     double *phi =malloc((ni*nj) *sizeof(double));
-    double *A =malloc((max(ni,nj)) *sizeof(double));
-    double *B =malloc((max(ni,nj)) *sizeof(double));
-    double *C =malloc((max(ni,nj)) *sizeof(double));
-    double *D =malloc((max(ni,nj)) *sizeof(double));
+    double *x_ksi =malloc((ni*nj) *sizeof(double));
+    double *x_ksi_ksi =malloc((ni*nj) *sizeof(double));
+    double *x_etta =malloc((ni*nj) *sizeof(double));
+    double *x_etta_etta =malloc((ni*nj) *sizeof(double));
+    double *y_etta =malloc((ni*nj) *sizeof(double));
+    double *y_etta_etta =malloc((ni*nj) *sizeof(double));
+    double *y_ksi =malloc((ni*nj) *sizeof(double));
+    double *y_ksi_ksi =malloc((ni*nj) *sizeof(double));
+    double *alpha =malloc((ni*nj) *sizeof(double));
+    double *beta =malloc((ni*nj) *sizeof(double));
+    double *gamma =malloc((ni*nj) *sizeof(double));
+    double *A =malloc((MAX(ni, nj)) *sizeof(double));
+    double *B =malloc((MAX(ni, nj)) *sizeof(double));
+    double *C =malloc((MAX(ni, nj)) *sizeof(double));
+    double *D =malloc((MAX(ni, nj)) *sizeof(double));
     // Check if memory allocation succeeded
     if (x == NULL || y == NULL)
     {
@@ -340,7 +361,8 @@ int main() {
     i_max(y, x, ni, ysf, le, dy);
     i_min(y, x, ni, le, dy);
     j_max(x, y, jmax, ni);
-    
+    calc_derivatives(x_ksi, x_etta, y_ksi, y_etta, x_ksi_ksi, x_etta_etta, y_ksi_ksi, y_etta_etta, x, y, ni, imax, jmax);
+    calc_greek(x_etta, y_etta, x_ksi,y_ksi, alpha, beta, gamma, ni, imax, jmax );
     
     for (int i = 1; i<=imax-1; i++) {
         for(int j = 1; j<= jmax-1; j++){
@@ -351,6 +373,20 @@ int main() {
     print_output(ni,nj,x,y);
     free(x);
     free(y);
+    free(psi);
+    free(phi);
+    free(x_ksi);
+    free(x_ksi_ksi);
+    free(x_etta);
+    free(x_etta_etta);
+    free(y_etta);
+    free(y_etta_etta);
+    free(y_ksi);
+    free(y_ksi_ksi);
+    free(alpha);
+    free(beta);
+    free(gamma);
+
 
     return 0;
 }
