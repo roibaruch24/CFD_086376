@@ -8,6 +8,15 @@
 int offset2d(int i, int j, double ni) {
     return j * ni + i;
 }
+int findMax(double *vector, double size) {
+    double max = vector[0];  // Assume the first element is the maximum
+    for (int i = 1; i < size; i++) {
+        if (vector[i] > max) {
+            max = vector[i];
+        }
+    }
+    return max;
+}
 int input(double *t,int *imax,int *jmax,int *tel,int *le,int *teu,double *dy,double *xsf,double *ysf)
 {
      char *input_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW1\\input.txt";
@@ -32,7 +41,6 @@ int print_output(int  ni,int  nj,double  *x,double  *y)
     fclose(output);
     return 0;
 }
-
 double airfoil(double *x, int ni, int i, int up_down, double t) {
     double x_int = 1.008930411365;
     double x_val = x[offset2d(i, 0, ni)];
@@ -157,17 +165,14 @@ void calc_derivatives(double *x_ksi, double *x_etta, double *y_ksi, double *y_et
         }
     }
 }
-
 void calc_alpha (double *x_etta, double *y_etta,double *alpha,  int ni, int i, int j){
     alpha[offset2d(i,j,ni)] = pow(y_etta[offset2d(i,j,ni)],2)+pow(x_etta[offset2d(i,j,ni)],2);}
-
 void calc_beta (double *x_etta, double *y_etta, double *x_ksi, double *y_ksi, double *beta,  int ni, int i, int j){
     beta[offset2d(i,j,ni)] = x_etta[offset2d(i,j,ni)]*x_ksi[offset2d(i,j,ni)] + y_etta[offset2d(i,j,ni)]*y_ksi[offset2d(i,j,ni)];
 }
 void calc_gamma (double *x_ksi, double *y_ksi,double *gamma,  int ni, int i, int j){
     gamma[offset2d(i,j,ni)] = pow(y_ksi[offset2d(i,j,ni)],2)+pow(x_ksi[offset2d(i,j,ni)],2);
 }   
-
 void calc_greek(double *x_etta, double *y_etta, double *x_ksi, double *y_ksi,double *alpha, double *beta, double *gamma, int ni, int imax, int jmax){
     for(int i = 0; i<= imax; i++){
         for (int j = 0; j <= jmax; j++){
@@ -216,61 +221,55 @@ void Calc_C (double *alpha, double *gamma,  int ni, int sweep, int imax, double 
         }
     }
 }
-void LHS (double *alpha, double *gamma, int ni, int sweep, int imax,double *A, double *B, double *C, int j, int jmax, int i, int r){
+void LHS (double *alpha, double *gamma, int ni, int sweep, int imax,double *A, double *B, double *C, int jmax, int r, int i, int j){
+    
     Calc_A (alpha, gamma, ni, sweep, imax, A, j, jmax,i);
     Calc_B (alpha, gamma, ni, sweep, imax, B, j, jmax, i, r);
     Calc_C (alpha, gamma, ni, sweep, imax, C, j, jmax,i);
-
-}
-/*void calc_psi_boundary (double *x, double *y, int ni, int sweep, double *psi, int jmax, int imax){
-    for (int i = 0; i<= imax; i+= imax){ // running for either i = 0 or i = imax
-        for (int j = 0; j <= jmax; j++){
-            double y_e = y_etta(y, ni, i ,j);
-            double x_e = y_etta(y, ni, i ,j);
-            double y_e_e = y_etta_etta(y, ni, i ,j);
-            double x_e_e = x_etta_etta(y, ni, i ,j);
-            if (abs(y_e) > abs(x_e)){
-                psi[offset2d(i,j,ni)] = -y_e_e/y_e;
-            }
-            else{
-                psi[offset2d(i,j,ni)] = -x_e_e/x_e;
-            }
-        }
-    }
-}
-void calc_phi_boundary (double *x, double *y, int ni, int sweep, double *phi, int jmax, int imax){
-    for (int j = 0; j<= jmax; j+= imax){ // running for either i = 0 or i = imax
-        for (int i = 0; i <= imax; i++){
-            double y_k = y_ksi(y, ni, i ,j);
-            double x_k = y_ksi(y, ni, i ,j);
-            double y_k_k = y_ksi_ksi(y, ni, i ,j);
-            double x_k_k = x_ksi_ksi(y, ni, i ,j);
-            if (abs(y_k) > abs(x_k)){
-                phi[offset2d(i,j,ni)] = -y_k_k/y_k;
-            }
-            else{
-                phi[offset2d(i,j,ni)] = -x_k_k/x_k;
-            }
-        }
-    }
-}
-void boundary_conditions(double *x, double *y, int imax, int jmax, int ni, int nj,  double *psi, double *phi , double *A, double *B, double *C, double *D, int sweep, int control_case ){
     A[0] = 0;
     B[0] = 1;
     C[0] = 0;
-    D[0] = 0;
+   
     if (sweep == 1){
         A[imax] = 0;
         B[imax] = 1;
         C[imax] = 0;
-        D[imax] = 0;
+        
     }
     else {
         A[imax] = 0;
         B[imax] = 1;
         C[imax] = 0;
-        D[imax] = 0;
+        
     }
+
+}
+void calc_psi_boundary (double *x, double *y,double *x_etta, double *y_etta, double *x_etta_etta, double *y_etta_etta, int ni, double *psi, int jmax, int imax){
+    for (int i = 0; i<= imax; i+= imax){ // running for either i = 0 or i = imax
+        for (int j = 0; j <= jmax; j++){
+            if (abs(y_etta[offset2d(i,j,ni)]) > abs(x_etta[offset2d(i,j,ni)])){
+                psi[offset2d(i,j,ni)] = -y_etta_etta[offset2d(i,j,ni)]/y_etta[offset2d(i,j,ni)];
+            }
+            else{
+                psi[offset2d(i,j,ni)] = -x_etta_etta[offset2d(i,j,ni)]/x_etta[offset2d(i,j,ni)];
+            }
+        }
+    }
+}
+void calc_phi_boundary (double *x, double *y, double *x_ksi, double *y_ksi, double *x_ksi_ksi, double *y_ksi_ksi, int ni, double *phi, int jmax, int imax){
+    for (int j = 0; j<= jmax; j+= imax){ // running for either i = 0 or i = imax
+        for (int i = 0; i <= imax; i++){
+            if (abs(y_ksi[offset2d(i,j,ni)]) > abs(x_ksi[offset2d(i,j,ni)])){
+                phi[offset2d(i,j,ni)] = -y_ksi_ksi[offset2d(i,j,ni)]/y_ksi[offset2d(i,j,ni)];
+            }
+            else{
+                phi[offset2d(i,j,ni)] = -x_ksi_ksi[offset2d(i,j,ni)]/x_ksi[offset2d(i,j,ni)];
+            }
+        }
+    }
+}
+void boundary_conditions(double *x, double *y, int imax, int jmax, int ni, int nj,  double *psi,double *x_etta, double *y_etta, double *x_ksi, double *y_ksi, double *x_etta_etta, double *y_etta_etta, double *x_ksi_ksi, double *y_ksi_ksi, double *phi , double *A, double *B, double *C, double *D, int control_case ){
+   
     if (control_case == 1)
     {
         for(int i = 0; i<= ni*nj; i++){
@@ -282,52 +281,139 @@ void boundary_conditions(double *x, double *y, int imax, int jmax, int ni, int n
         for(int i = 0; i<= ni*nj; i++){
             phi[i] = 0;
         }
-        calc_psi_boundary(x, y, ni, sweep, psi, jmax, imax);
+    calc_psi_boundary(x, y, x_etta, y_etta, x_etta_etta, y_etta_etta, ni, psi, jmax, imax);
     }
     else  if (control_case == 3){
         for(int i = 0; i<= ni*nj; i++){
             psi[i] = 0;
         }
-        calc_phi_boundary(x, y, ni, sweep, psi, jmax, imax);
+    calc_phi_boundary(x, y, x_ksi, y_ksi, x_ksi_ksi, y_ksi_ksi, ni, phi, jmax, imax);
     }
     else  if (control_case == 4){
-        calc_psi_boundary(x, y, ni, sweep, psi, jmax, imax);
-        calc_phi_boundary(x, y, ni, sweep, psi, jmax, imax);
+
+    }
+    calc_psi_boundary(x, y, x_etta, y_etta, x_etta_etta, y_etta_etta, ni, psi, jmax, imax);
+    calc_phi_boundary(x, y, x_ksi, y_ksi, x_ksi_ksi, y_ksi_ksi, ni, phi, jmax, imax);
+}
+void L_operator(double *x, double *y, double *alpha, double *beta, double *gamma, double *var, double *L, int ni, double *psi, double *phi, int imax, int jmax){
+    for (int i = 1; i< imax; i++){
+        for (int j = 1; j < jmax; j++){
+            double const x_i = var[offset2d(i,j,ni)];
+            double const x_i_1 = var[offset2d(i+1,j,ni)];
+            double const x_i_m1 = var[offset2d(i-1,j,ni)];
+            double const x_j_1 = var[offset2d(i,j+1,ni)];
+            double const x_j_m1 = var[offset2d(i,j-1,ni)];
+            double const x_i_1_j_1 = var[offset2d(i+1,j+1,ni)];
+            double const x_i_1_j_m1 = var[offset2d(i+1,j-1,ni)];
+            double const x_i_m1_j_1 = var[offset2d(i-1,j+1,ni)];
+            double const x_i_m1_j_m1 = var[offset2d(i-1,j-1,ni)];
+            L[offset2d(i,j,ni)] = alpha[offset2d(i,j,ni)]*(x_i_1-2*x_i+x_i_m1)+0.5*phi[offset2d(i,j,ni)]*(x_i_1-x_i_m1)
+            -0.5*beta[offset2d(i,j,ni)]*(x_i_1_j_1-x_i_1_j_m1-x_i_m1_j_1-x_i_m1_j_m1)+gamma[offset2d(i,j,ni)]*
+            (x_j_1-2*x_i+x_j_m1+0.5*psi[offset2d(i,j,ni)]*(x_j_1-x_j_m1));
+        }
     }
 }
-void L_operator(double *x, double *y, double *var, double *L, int ni, int i, int j, double *psi, double *phi, int imax){
-    double alpha = calc_alpha(x, y, ni, i, j);
-    double beta  = calc_beta(x, y, ni, i, j);
-    double gamma = calc_gamma(x, y, ni, i, j);
-    interp_i(phi, i, j, imax, ni);
-    interp_i(psi, i, j, imax, ni);
-    double x_i_1_j = var[offset2d(i+1,j,ni)];  // x_(i+1)_j
-    double x_i_j = var[offset2d(i,j,ni)];      // x_(i)_j
-    double x_i_m1_j = var[offset2d(i-1,j,ni)]; // x_(i-1)_j
+void RHS (double *D, int i, int j, int ni, int r, int w, double *L, int sweep, int imax){
+    if (sweep == 1){
+        for (int i = 0; i <= imax; i++){
+        D[offset2d(i,j,ni)] = r*w*L[offset2d(i,j,ni)]; 
+        }
+        D[0] = 0;
+        D[imax] = 0;
+    }
+    else{
+        for (int i = 0; i <= imax; i++){
+            D[offset2d(i,j,ni)] = L[offset2d(i,j,ni)]; 
+        }
+        D[0] = 0;
+        D[imax] = 0;
+    }
 
-    double x_i_1_j_1 = var[offset2d(i+1,j+1,ni)];  // x_(i+1)_(j+1)
-    double x_i_j_1 = var[offset2d(i,j+1,ni)];      // x_(i)_(j+1)
-    double x_i_m1_j_1 = var[offset2d(i-1,j+1,ni)]; // x_(i-1)_(j+1)
-
-    double x_i_1_j_m1 = var[offset2d(i+1,j-1,ni)];  // x_(i+1)_(j-1)
-    double x_i_j_m1 = var[offset2d(i,j-1,ni)];      // x_(i)_(j-1)
-    double x_i_m1_j_m1 = var[offset2d(i-1,j-1,ni)]; // x_(i-1)_(j-1)
-    
-    *L = alpha*((x_i_1_j-2*x_i_j+x_i_m1_j)+0.5*phi[offset2d(i,j,ni)]*(x_i_1_j-x_i_m1_j))
-        -0.5*beta*(x_i_1_j_1-x_i_1_j_m1-x_i_m1_j_1+x_i_m1_j_m1)
-        +gamma*((x_i_j_1-2*x_i_j+x_i_j_m1)+0.5*psi[offset2d(i,j,ni)]*(x_i_j_1-x_i_j_m1));    
 }
-*/
- 
+int tridiag(double *A_dig, double *B_dig, double *C_dig, double *d, double *u, int is, int ie)
+{
+  int i;
+  double beta;
+  for (i = is + 1; i <= ie; i++)
+    {
+      if(B_dig[i-1] == 0.) return(1);
+      beta = A_dig[i] / B_dig[i-1];
+      B_dig[i] = B_dig[i] - C_dig[i-1] * beta;
+      d[i] = d[i] - d[i-1] * beta;
+    }
+
+  u[ie] = d[ie] / B_dig[ie];
+  for (i = ie - 1; i >= is; i--)
+    {
+      u[i] = (d[i] - C_dig[i] * u[i+1]) / B_dig[i];
+    }
+  return(0);
+}
+void step (double *x, double *y,int jmax, double *alpha, double *beta, double *gamma, double *psi, double *phi, int ni, int imax, double *A , double *B, double *C, double *D, int r, int w, double *L_x, double *L_y, double *f_x, double *f_y, double *solutions_x, double *solutions_y, double *C_x, double *C_y, double *Del_x, double *Del_y, double *x_ksi, double *y_ksi, double *x_etta, double *y_etta, double *x_ksi_ksi, double *y_ksi_ksi, double *x_etta_etta, double *y_etta_etta ){
+     // Sweep 1
+    int sweep = 1;
+    int is = 1; int ie = imax -1;
+    for (int j = 1; j < jmax; j++){
+        int i = 0;
+        // X values
+        LHS(alpha, gamma, ni, sweep, imax, A, B, C, jmax, r, i, j);
+        RHS(D, i, j, ni, r, w, L_x, sweep, imax);
+        tridiag(A, B, C, D, f_x, is, ie);
+        for (int k  = 1; k < imax; k++ ){
+            solutions_x[offset2d(i,j,ni)] = f_x[k];    
+        }
+        // Y values
+        LHS(alpha, gamma, ni, sweep, imax, A, B, C, jmax, r, i, j);
+        RHS(D, i, j, ni, r, w, L_y, sweep, imax);
+        tridiag(A, B, C, D, f_y, is, ie);
+        for (int k  = 1; k < imax; k++ ){
+            solutions_y[offset2d(k,j,ni)] = f_y[k];
+        }           
+    }
 
 
 
+    // Sweep 2
+    sweep = 2;
+     is = 1;  ie = jmax -1;
+    for (int i = 1; i < imax; i++){
+        int j = 0;
+        // X values
+        LHS(alpha, gamma, ni, sweep, imax, A, B, C, jmax, r, i, j);
+        RHS(D, i, j, ni, r, w, solutions_x, sweep, imax);
+        tridiag(A, B, C, D, C_x, is, ie);
+        for (int k  = 1; k < imax; k++ ){
+            Del_x[offset2d(i,k,ni)] = C_x[k];    
+        }
+        // Y values
+        LHS(alpha, gamma, ni, sweep, imax, A, B, C, jmax, r, i, j);
+        RHS(D, i, j, ni, r, w, solutions_y, sweep, imax);
+        tridiag(A, B, C, D, C_y, is, ie);
+        for (int k  = 1; k < imax; k++ ){
+            Del_y[offset2d(i,k,ni)] = C_y[k];
+            
+        }           
+    }
+    // Updating both X and Y values
+    for(int i = 1; i<=imax; i++){
+        for(int j = 1; j<= jmax; j++){
+            x[offset2d(i,j,ni)] += Del_x[offset2d(i,j,ni)];
+            y[offset2d(i,j,ni)] += Del_y[offset2d(i,j,ni)];
+        }
+    }
+    calc_derivatives(x_ksi, x_etta, y_ksi, y_etta, x_ksi_ksi, x_etta_etta, y_ksi_ksi, y_etta_etta, x, y, ni, imax, jmax);
+    calc_greek(x_etta, y_etta, x_ksi,y_ksi, alpha, beta, gamma, ni, imax, jmax );
+    L_operator(x,  y, alpha, beta, gamma, x, L_x, ni, psi, phi, imax, jmax);
+    L_operator(x,  y, alpha, beta, gamma, y, L_y, ni, psi, phi, imax, jmax);    
+}
 
   
 int main() {
     double t;int imax;int jmax;int tel;int le;int teu;double dy;double xsf;double ysf;
     double dx = 0.0714;
-    int control_case;
+    int r = 0.5;
+    int w = 1.2;
+    int control_case = 0;
     input(&t,&imax,&jmax,&tel,&le,&teu,&dy,&xsf,&ysf);
     int  ni = imax+1;int  nj = jmax+1;
     double *x =malloc((ni*nj) *sizeof(double));
@@ -349,26 +435,45 @@ int main() {
     double *B =malloc((MAX(ni, nj)) *sizeof(double));
     double *C =malloc((MAX(ni, nj)) *sizeof(double));
     double *D =malloc((MAX(ni, nj)) *sizeof(double));
-    // Check if memory allocation succeeded
-    if (x == NULL || y == NULL)
-    {
-        fprintf(stderr, "Memory allocation failed. Exiting...\n");
-        return EXIT_FAILURE;
-    }
-
+    double *L_x =malloc((ni*nj) *sizeof(double));
+    double *L_y =malloc((ni*nj) *sizeof(double));
+    double *f_x =malloc((MAX(ni, nj)) *sizeof(double));
+    double *f_y =malloc((MAX(ni, nj)) *sizeof(double));
+    double *solutions_x =malloc((ni*nj) *sizeof(double));
+    double *solutions_y =malloc((ni*nj) *sizeof(double)); 
+    double *C_x =malloc((MAX(ni, nj)) *sizeof(double));
+    double *C_y =malloc((MAX(ni, nj)) *sizeof(double)); 
+    double *Del_x =malloc((MAX(ni, nj)) *sizeof(double));
+    double *Del_y =malloc((MAX(ni, nj)) *sizeof(double)); 
+    
     // Call the functions
     j_min(x, y, ni, dx, t, tel, le, teu, xsf);
     i_max(y, x, ni, ysf, le, dy);
     i_min(y, x, ni, le, dy);
     j_max(x, y, jmax, ni);
-    calc_derivatives(x_ksi, x_etta, y_ksi, y_etta, x_ksi_ksi, x_etta_etta, y_ksi_ksi, y_etta_etta, x, y, ni, imax, jmax);
-    calc_greek(x_etta, y_etta, x_ksi,y_ksi, alpha, beta, gamma, ni, imax, jmax );
-    
     for (int i = 1; i<=imax-1; i++) {
         for(int j = 1; j<= jmax-1; j++){
             interp_j(x, y, i, j, jmax,ni);
         }
     }
+
+    calc_derivatives(x_ksi, x_etta, y_ksi, y_etta, x_ksi_ksi, x_etta_etta, y_ksi_ksi, y_etta_etta, x, y, ni, imax, jmax);
+    calc_greek(x_etta, y_etta, x_ksi,y_ksi, alpha, beta, gamma, ni, imax, jmax );
+    calc_phi_boundary (x, y, x_ksi, y_ksi, x_ksi_ksi, y_ksi_ksi, ni, phi, jmax, imax);
+    calc_psi_boundary(x, y, x_etta, y_etta, x_etta_etta, y_etta_etta, ni, psi, jmax, imax);
+    boundary_conditions(x, y, imax, jmax, ni, nj, psi, x_etta, y_etta, x_ksi, y_ksi, x_etta_etta, y_etta_etta, x_ksi_ksi, y_ksi_ksi, phi, A, B, C, D, control_case);
+    L_operator(x,  y, alpha, beta, gamma, x, L_x, ni, psi, phi, imax, jmax);
+    L_operator(x,  y, alpha, beta, gamma, y, L_y, ni, psi, phi, imax, jmax);
+    
+    int iteration = 0;
+    while (findMax((L_x), ni*nj)> 10^(-6) && findMax((L_y), ni*nj)> 10^(-6))
+    {
+       step(x, y, jmax, alpha, beta, gamma, psi, phi, ni, imax, A , B, C, D, r, w, L_x, L_y, f_x, f_y, solutions_x, solutions_y, C_x, C_y, Del_x, Del_y, x_ksi, y_ksi, x_etta, y_etta, x_ksi_ksi, y_ksi_ksi, x_etta_etta, y_etta_etta); 
+       iteration ++;
+       //printf(iteration);
+    }
+    
+    
 
     print_output(ni,nj,x,y);
     free(x);
@@ -386,6 +491,19 @@ int main() {
     free(alpha);
     free(beta);
     free(gamma);
+    free(A);
+    free(B);
+    free(C);
+    free(D);
+    free(L_x);
+    free(L_y);
+    free(solutions_x);
+    free(solutions_y);
+    free(C_x);
+    free(C_y);
+    free(Del_x);
+    free(Del_y);
+
 
 
     return 0;
