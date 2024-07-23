@@ -86,19 +86,20 @@
 %         y(i,j) = y(i,1)+m_y*(j-1);
 %     end
 % end
-
 %% scattering
 load output.txt
 x = output(:,1);
 y = output(:,2);
-x_mat_r = zeros(51,26);
-y_mat_r = zeros(51,26);
+
+x_mat = zeros(51,26);
+y_mat = zeros(51,26);
 k = 1;
 for i=1:1:26
-    x_mat_r(:,i)=x(k:k+50,1);
-    y_mat_r(:,i)=y(k:k+50,1);
+    x_mat(:,i)=x(k:k+50,1);
+    y_mat(:,i)=y(k:k+50,1);
     k = k+51;
 end
+%%
 figure
 hold on
 grid on
@@ -107,9 +108,9 @@ plot(x_mat(end,:), y_mat(end,:), 'm', 'DisplayName', 'i max');
 plot(x_mat(1,:), y_mat(1,:), 'g', 'DisplayName', 'i min');
 plot(x_mat(:,26), y_mat(:,26), 'b', 'DisplayName', 'j max');
 for j = 2:1:25
-    plot(x_mat(:,j), y_mat(:,j),'r')
+    plot(x_mat(:,j), y_mat(:,j),'r','LineWidth',0.5)
 end
 for i = 2:1:50
-    plot(x_mat(i,:), y_mat(i,:),'r')
+    plot(x_mat(i,:), y_mat(i,:),'r','LineWidth',0.5)
 end
 
