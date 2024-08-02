@@ -8,11 +8,11 @@
 int offset2d(int i, int j, double ni) {
     return j * ni + i;
 }
-int findMax(double *vector, double size) {
-    double max = vector[0];  // Assume the first element is the maximum
+int find_fabs_Max(double *vector, double size) {
+    double max = fabs(vector[0]);  // Assume the first element is the maximum
     for (int i = 1; i < size; i++) {
-        if (vector[i] > max) {
-            max = vector[i];
+        if (fabs(vector[i]) > max) {
+            max = fabs(vector[i]);
         }
     }
     return max;
@@ -272,55 +272,69 @@ void calc_psi_boundary (double *x, double *y,double *x_etta, double *y_etta, dou
     }
 }
 void calc_phi_boundary (double *x, double *y, double *x_ksi, double *y_ksi, double *x_ksi_ksi, double *y_ksi_ksi, int ni, double *phi, int jmax, int imax){
-    for (int j = 0; j<= jmax; j+= imax){ // running for either i = 0 or i = imax
-        for (int i = 0; i <= imax; i++){
-            if (fabs(y_ksi[offset2d(i,j,ni)]) > fabs(x_ksi[offset2d(i,j,ni)])){
+    for (int j =0; j<=jmax; j+=jmax) //for i max after finishing i min
+    {
+        for (int i=0; i<=imax; i++) //for i min
+        {
+            if (fabs(y_ksi[offset2d(i,j,ni)])>fabs(x_ksi[offset2d(i,j,ni)]))
+            {
                 phi[offset2d(i,j,ni)] = -y_ksi_ksi[offset2d(i,j,ni)]/y_ksi[offset2d(i,j,ni)];
             }
-            else{
+            else
+            {
                 phi[offset2d(i,j,ni)] = -x_ksi_ksi[offset2d(i,j,ni)]/x_ksi[offset2d(i,j,ni)];
             }
         }
     }
 }
 void control_function_inside (double *x, double *y, int imax, int jmax, int ni, int nj,  double *psi,double *x_etta, double *y_etta, double *x_ksi, double *y_ksi, double *x_etta_etta, double *y_etta_etta, double *x_ksi_ksi, double *y_ksi_ksi, double *phi , double *A, double *B, double *C, double *D, int control_case ){
-    if (control_case == 1)
+    if (control_case==1)
     {
-        for(int i = 1; i < imax; i++){
-            for (int j = 1; j < jmax; j++){
-            phi[offset2d(i,j,ni)] = 0;
-            psi[offset2d(i,j,ni)] = 0;
+        for (int i=1; i<imax; i++)
+        {
+            for (int j=1; j<jmax; j++)
+            {
+                psi[offset2d(i,j,ni)]=0;
+                phi[offset2d(i,j,ni)]=0;
             }
         }
     }
-    else  if (control_case == 2){
-        for(int j = 1;j < jmax; j++){
-            for (int i = 1; i < imax; i++){
-            phi[offset2d(i,j,ni)] = 0;
-            interp_i(psi, i ,j, imax, ni);
-
+    else if (control_case==2)
+    {
+        for (int j=1; j<jmax; j++)
+        {
+            for (int i=1; i<imax; i++)
+            {
+                phi[offset2d(i,j,ni)]=0;
+                interp_j(psi,i,j,imax,ni);
             }
         }
     }
-    else  if (control_case == 3){
-        for(int i = 1; i < imax; i++){
-            for (int j = 1; j < jmax; j++){
-            psi[offset2d(i,j,ni)] = 0;
-            interp_j(phi, i ,j, imax, ni);
-
+    else if (control_case==3)
+    {
+        for (int i=1; i<imax; i++)
+        {
+            for (int j=1; j<jmax; j++)
+            {
+                psi[offset2d(i,j,ni)]=0;
+                interp_j(phi,i,j,jmax,ni);
             }
         }
     }
-    else  if (control_case == 4){
-        for(int i = 1; i < imax; i++){
-            for (int j = 1; j < jmax; j++){
-            interp_j(phi, i ,j, imax, ni);
-
+    else if (control_case==4)
+    {
+        for (int j=1; j<jmax; j++)
+        {
+            for (int i=1; i<imax; i++)
+            {
+                interp_i(psi,i,j,imax,ni);
             }
         }
-        for(int j = 1; j < jmax; j++){
-            for (int i = 1; i < imax; i++){
-            interp_i(psi, i ,j, imax, ni);
+        for (int i=1; i<imax; i++)
+        {
+            for (int j=1; j<jmax; j++)
+            {
+                interp_j(phi,i,j,jmax,ni);
             }
         }
     }
@@ -333,15 +347,15 @@ void control_function(double *x, double *y, int imax, int jmax, int ni, int nj, 
 void L_operator(double *alpha, double *beta, double *gamma, double *var, double *L, int ni, double *psi, double *phi, int imax, int jmax){
     for (int i = 1; i< imax; i++){
         for (int j = 1; j < jmax; j++){
-            double const x_i = var[offset2d(i,j,ni)];
-            double const x_i_1 = var[offset2d(i+1,j,ni)];
-            double const x_i_m1 = var[offset2d(i-1,j,ni)];
-            double const x_j_1 = var[offset2d(i,j+1,ni)];
-            double const x_j_m1 = var[offset2d(i,j-1,ni)];
-            double const x_i_1_j_1 = var[offset2d(i+1,j+1,ni)];
-            double const x_i_1_j_m1 = var[offset2d(i+1,j-1,ni)];
-            double const x_i_m1_j_1 = var[offset2d(i-1,j+1,ni)];
-            double const x_i_m1_j_m1 = var[offset2d(i-1,j-1,ni)];
+            double x_i = var[offset2d(i,j,ni)];
+            double x_i_1 = var[offset2d(i+1,j,ni)];
+            double x_i_m1 = var[offset2d(i-1,j,ni)];
+            double x_j_1 = var[offset2d(i,j+1,ni)];
+            double x_j_m1 = var[offset2d(i,j-1,ni)];
+            double x_i_1_j_1 = var[offset2d(i+1,j+1,ni)];
+            double x_i_1_j_m1 = var[offset2d(i+1,j-1,ni)];
+            double x_i_m1_j_1 = var[offset2d(i-1,j+1,ni)];
+            double x_i_m1_j_m1 = var[offset2d(i-1,j-1,ni)];
             L[offset2d(i,j,ni)] = alpha[offset2d(i,j,ni)]*((x_i_1-2*x_i+x_i_m1)+0.5*phi[offset2d(i,j,ni)]*(x_i_1-x_i_m1))
             -0.5*beta[offset2d(i,j,ni)]*(x_i_1_j_1-x_i_1_j_m1-x_i_m1_j_1+x_i_m1_j_m1)+gamma[offset2d(i,j,ni)]
             *(x_j_1-2*x_i+x_j_m1+0.5*psi[offset2d(i,j,ni)]*(x_j_1-x_j_m1));
@@ -445,9 +459,9 @@ void step (double *x, double *y,int jmax, double *alpha, double *beta, double *g
   
 int main() {
     double t;int imax;int jmax;int tel;int le;int teu;double dy;double xsf;double ysf;
-    double r = 0.5;
+    double r = 0.005;
     double w = 1.2;
-    int control_case = 4;
+    int control_case = 2;
     input(&t,&imax,&jmax,&tel,&le,&teu,&dy,&xsf,&ysf);
     double dx = (double)1/(le-tel);
     int  ni = imax+1;int  nj = jmax+1;
@@ -492,17 +506,17 @@ int main() {
             interp_j(y, i, j, jmax,ni);
         }
     }
-
+    
     calc_derivatives(x_ksi, x_etta, y_ksi, y_etta, x_ksi_ksi, x_etta_etta, y_ksi_ksi, y_etta_etta, x, y, ni, imax, jmax);
     calc_greek(x_etta, y_etta, x_ksi,y_ksi, alpha, beta, gamma, ni, imax, jmax );
-    print_output(ni, nj, x_etta, y_etta);
     control_function(x, y, imax, jmax, ni, nj, psi, x_etta, y_etta, x_ksi, y_ksi, x_etta_etta, y_etta_etta, x_ksi_ksi, y_ksi_ksi, phi , A, B, C, D, control_case );
     L_operator(alpha, beta, gamma, x, L_x, ni, psi, phi, imax, jmax);
     L_operator(alpha, beta, gamma, y, L_y, ni, psi, phi, imax, jmax);
-    //print_output(ni, nj, phi, psi);
+    print_output(ni, nj, phi, psi);
+   
     
-    int iteration = 0;
-    while (iteration < 500)
+    int iteration = 1;
+    while (log10(find_fabs_Max(L_x,ni*nj)) > -6 && log10(find_fabs_Max(L_y,ni*nj)) > -6)
     {
        step(x, y, jmax, alpha, beta, gamma, psi, phi, ni, imax, A , B, C, D, r, w, L_x, L_y, f_x, f_y, solutions_x, solutions_y, C_x, C_y, Del_x, Del_y, x_ksi, y_ksi, x_etta, y_etta, x_ksi_ksi, y_ksi_ksi, x_etta_etta, y_etta_etta); 
        iteration ++;
