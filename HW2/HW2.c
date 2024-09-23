@@ -184,10 +184,10 @@ void RHS(int ni, int nj, int imax, int jamx, double *Jacobian, double *y_ksi, do
             double v = Q[offset3d(i, j, 2, ni, nj)]/Q[offset3d(i, j, 0, ni, nj)];
             double U_conv = Jacobian[offset2d(i, j, ni)]*(y_etta[offset2d(i, j, ni)]*u - x_etta[offset2d(i, j, ni)]*v);
             double P = ((gamma-1)*Q[offset3d(i, j, 3, ni, nj)]-0.5*Q[offset3d(i, j, 0, ni, nj)]*(pow(u,2)+pow(v,2)))/Jacobian[offset2d(i, j, ni)];
-            W[offset2d(i, 0, ni)] = (Q[offset3d(i, j, 1, ni, nj)]*U_conv)/Jacobian[offset2d(i, j, ni)];
+            W[offset2d(i, 0, ni)] = (Q[offset3d(i, j, 0, ni, nj)]*U_conv)/Jacobian[offset2d(i, j, ni)];
             W[offset2d(i, 1, ni)] = (Q[offset3d(i, j, 1, ni, nj)]*U_conv + Jacobian[offset2d(i, j, ni)]*y_etta[offset2d(i, j, ni)]*P)/Jacobian[offset2d(i, j, ni)];
             W[offset2d(i, 2, ni)] = (Q[offset3d(i, j, 2, ni, nj)]*U_conv - Jacobian[offset2d(i, j, ni)]*x_etta[offset2d(i, j, ni)]*P)/Jacobian[offset2d(i, j, ni)];
-            W[offset2d(i, 2, ni)] = U_conv*(P+Q[offset3d(i, j, 3, ni, nj)])/Jacobian[offset2d(i, j, ni)];
+            W[offset2d(i, 3, ni)] = U_conv*(P+Q[offset3d(i, j, 3, ni, nj)])/Jacobian[offset2d(i, j, ni)];
     }
     for(int i = 1; i< imax; i++){
         for( int k = 0; k < 4; k++ ){
@@ -197,6 +197,25 @@ void RHS(int ni, int nj, int imax, int jamx, double *Jacobian, double *y_ksi, do
 
 }
 
+/* etta direction */ 
+    for (int i = 1; i < imax; i++){
+        for ( int j = 0; j <= jamx; j++){
+            double u = Q[offset3d(i, j, 1, ni, nj)]/Q[offset3d(i, j, 0, ni, nj)];
+            double v = Q[offset3d(i, j, 2, ni, nj)]/Q[offset3d(i, j, 0, ni, nj)];
+            double V_conv = Jacobian[offset2d(i, j, ni)]*(-y_ksi[offset2d(i, j, ni)]*u + x_ksi[offset2d(i, j, ni)]*v);
+            double P = ((gamma-1)*Q[offset3d(i, j, 3, ni, nj)]-0.5*Q[offset3d(i, j, 0, ni, nj)]*(pow(u,2)+pow(v,2)))/Jacobian[offset2d(i, j, ni)];
+            W[offset2d(j, 0, ni)] = (Q[offset3d(i, j, 0, ni, nj)]*V_conv)/Jacobian[offset2d(i, j, ni)];
+            W[offset2d(j, 1, ni)] = (Q[offset3d(i, j, 1, ni, nj)]*V_conv - Jacobian[offset2d(i, j, ni)]*y_ksi[offset2d(i, j, ni)]*P)/Jacobian[offset2d(i, j, ni)];
+            W[offset2d(j, 2, ni)] = (Q[offset3d(i, j, 2, ni, nj)]*V_conv + Jacobian[offset2d(i, j, ni)]*x_ksi[offset2d(i, j, ni)]*P)/Jacobian[offset2d(i, j, ni)];
+            W[offset2d(j, 3, ni)] = V_conv*(P+Q[offset3d(i, j, 3, ni, nj)])/Jacobian[offset2d(i, j, ni)];
+        }
+        for(int j = 1; j < jamx ; j++){
+            for( int k = 0; k < 4; k++ ){
+                S[offset3d(i, j, k, ni, nj)] = -0.5*(W[offset2d(j+1,k, ni)]-W[offset2d(j-1,k,ni)]); 
+            }
+        }
+
+    }
 
 }
 int print_output(int ni,int nj,
