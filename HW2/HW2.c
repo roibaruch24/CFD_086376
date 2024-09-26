@@ -15,10 +15,10 @@ int offset3d(int const i, int const j,int const k, int const ni ,int const nj)
 // Reads the input file for parameters
 int input(int *ni, int *nj, int *teu, int *tel, double *M, double *alpha, double *p, double *rho) 
 {
-    //const char *parameters_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW2\\parametrs.txt";
-    const char *parameters_file_path = "C:\\Users\\roiB\\Desktop\\CFD\\CFD_086376\\HW2\\parametrs.txt";
-    //const char *input_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW2\\Grid_File2.txt";
-    const char *input_file_path = "C:\\Users\\roiB\\Desktop\\CFD\\CFD_086376\\HW2\\Grid_File2.txt";
+    const char *parameters_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW2\\parametrs.txt";
+    //const char *parameters_file_path = "C:\\Users\\roiB\\Desktop\\CFD\\CFD_086376\\HW2\\parametrs.txt";
+    const char *input_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW2\\input_mesh.txt";
+    //const char *input_file_path = "C:\\Users\\roiB\\Desktop\\CFD\\CFD_086376\\HW2\\Grid_File2.txt";
 
     // Open parameters file
     FILE *input_param = fopen(parameters_file_path, "rt");
@@ -35,7 +35,7 @@ int input(int *ni, int *nj, int *teu, int *tel, double *M, double *alpha, double
         fclose(input_param);
         return -1;
     }
-    *alpha = *alpha/57.3;
+
 
     fclose(input_param); // Close parameters file
 
@@ -61,8 +61,8 @@ int input(int *ni, int *nj, int *teu, int *tel, double *M, double *alpha, double
 // Reads the mesh file (but assumes memory for x and y is already allocated)
 int input_mesh(double *x, double *y, int ni, int nj) 
 {
-    //const char *input_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW2\\Grid_File2.txt";
-    const char *input_file_path = "C:\\Users\\roiB\\Desktop\\CFD\\CFD_086376\\HW2\\Grid_File2.txt";
+    const char *input_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW2\\input_mesh.txt";
+    //const char *input_file_path = "C:\\Users\\roiB\\Desktop\\CFD\\CFD_086376\\HW2\\Grid_File2.txt";
 
     // Open mesh input file
     FILE *input = fopen(input_file_path, "rt");
@@ -164,7 +164,7 @@ free(y_etta);
 
 }
 void freestream (double rho, double p, double M, double alpha, double *Q, int imax, int jmax, int ni, int nj){
-    double a = sqrt(gamma*rho/p);
+    double a = sqrt(gamma*p/rho);
     double u = M*a*cos(alpha/57.3);
     double v = M*a*sin(alpha/57.3);
     for(int i = 0; i<= imax; i++){
@@ -179,10 +179,14 @@ void freestream (double rho, double p, double M, double alpha, double *Q, int im
 }
 void bc_wall(double *x, double *y, int tel, int teu, double *Q, int ni, int nj, double *ksi_x, double *ksi_y, double *etta_x, double *etta_y){
     for (int i = tel; i<=teu; i++){
-            double u_1 = Q[offset3d(i, 1, 1,ni, nj)]/Q[offset3d(i, 0, 1, ni, nj)];
+            double u_1 = Q[offset3d(i, 1, 1,ni, nj)]/Q[offset3d(i, 1, 0, ni, nj)];
             double v_1 = Q[offset3d(i, 1, 2,ni, nj)]/Q[offset3d(i, 1, 0, ni, nj)];
             double u = ((ksi_x[offset2d(i, 1, ni)]*u_1 )+ksi_y[offset2d(i, 1, ni)]*v_1)/(ksi_x[offset2d(i, 0, ni)]-ksi_y[offset2d(i, 0, ni)]*(etta_x[offset2d(i, 0, ni)]/etta_y[offset2d(i, 0, ni)]));
             double v =(-etta_x[offset2d(i,0,ni)])/(etta_y[offset2d(i,0,ni)])*u;
+            if (etta_y[offset2d(i,0,ni)]==0)
+            {
+            v = (ksi_x[offset2d(i,1,ni)]*u_1+(ksi_y[offset2d(i,1,ni)])*v_1-ksi_x[offset2d(i,0,ni)]*u)/ksi_y[offset2d(i,0,ni)];
+            }       
             double rho = Q[offset3d(i,1,0,ni,nj)];
             double e1 = Q[offset3d(i,1,3,ni,nj)];
             double P = (gamma-1)*(e1-0.5*rho*(pow(u_1,2)+(pow(v_1,2))));
@@ -240,9 +244,9 @@ void bc_outflow(double *x, double *y, int tel, int teu, double *Q, int ni, int n
         }
     }
 }
-void RHS(int ni, int nj, int imax, int jamx, double *Jacobian, double *ksi_x, double *ksi_y, double *etta_x, double *etta_y, double *Q, double *W, double *S){   
+void RHS(int ni, int nj, int imax, int jmax, double *Jacobian, double *ksi_x, double *ksi_y, double *etta_x, double *etta_y, double *Q, double *W, double *S, double dt ){   
     /* ksi direction */ 
-    for (int j = 1; j < jamx; j++){
+    for (int j = 1; j < jmax; j++){
         for ( int i = 0; i <= imax; i++){
             double u = Q[offset3d(i, j, 1, ni, nj)]/Q[offset3d(i, j, 0, ni, nj)];
             double v = Q[offset3d(i, j, 2, ni, nj)]/Q[offset3d(i, j, 0, ni, nj)];
@@ -255,7 +259,7 @@ void RHS(int ni, int nj, int imax, int jamx, double *Jacobian, double *ksi_x, do
     }
     for(int i = 1; i< imax; i++){
         for( int k = 0; k < 4; k++ ){
-            S[offset3d(i, j, k, ni, nj)] = -0.5*(W[offset2d(i+1,k, ni)]-W[offset2d(i-1,k,ni)]);
+            S[offset3d(i, j, k, ni, nj)] += -0.5*(W[offset2d(i+1,k, ni)]-W[offset2d(i-1,k,ni)]);
         }
     }
 
@@ -263,22 +267,30 @@ void RHS(int ni, int nj, int imax, int jamx, double *Jacobian, double *ksi_x, do
 
 /* etta direction */ 
     for (int i = 1; i < imax; i++){
-        for ( int j = 0; j <= jamx; j++){
+        for ( int j = 0; j <= jmax; j++){
             double u = Q[offset3d(i, j, 1, ni, nj)]/Q[offset3d(i, j, 0, ni, nj)];
             double v = Q[offset3d(i, j, 2, ni, nj)]/Q[offset3d(i, j, 0, ni, nj)];
             double V_conv = etta_x[offset2d(i, j, ni)]*u + etta_y[offset2d(i, j, ni)]*v;
             double P = ((gamma-1)*Q[offset3d(i, j, 3, ni, nj)]-0.5*Q[offset3d(i, j, 0, ni, nj)]*(pow(u,2)+pow(v,2)))/Jacobian[offset2d(i, j, ni)];
-            W[offset2d(j, 0, ni)] = (Q[offset3d(i, j, 0, ni, nj)]*V_conv)/Jacobian[offset2d(i, j, ni)];
-            W[offset2d(j, 1, ni)] = (Q[offset3d(i, j, 1, ni, nj)]*V_conv + etta_x[offset2d(i, j, ni)]*P)/Jacobian[offset2d(i, j, ni)];
-            W[offset2d(j, 2, ni)] = (Q[offset3d(i, j, 2, ni, nj)]*V_conv + etta_y[offset2d(i, j, ni)]*P)/Jacobian[offset2d(i, j, ni)];
-            W[offset2d(j, 3, ni)] = V_conv*(P+Q[offset3d(i, j, 3, ni, nj)])/Jacobian[offset2d(i, j, ni)];
+            W[offset2d(j, 0, nj)] = (Q[offset3d(i, j, 0, ni, nj)]*V_conv)/Jacobian[offset2d(i, j, ni)];
+            W[offset2d(j, 1, nj)] = (Q[offset3d(i, j, 1, ni, nj)]*V_conv + etta_x[offset2d(i, j, ni)]*P)/Jacobian[offset2d(i, j, ni)];
+            W[offset2d(j, 2, nj)] = (Q[offset3d(i, j, 2, ni, nj)]*V_conv + etta_y[offset2d(i, j, ni)]*P)/Jacobian[offset2d(i, j, ni)];
+            W[offset2d(j, 3, nj)] = V_conv*(P+Q[offset3d(i, j, 3, ni, nj)])/Jacobian[offset2d(i, j, ni)];
         }
-        for(int j = 1; j < jamx ; j++){
+        for(int j = 1; j < jmax ; j++){
             for( int k = 0; k < 4; k++ ){
-                S[offset3d(i, j, k, ni, nj)] = -0.5*(W[offset2d(j+1,k, ni)]-W[offset2d(j-1,k,ni)]); 
+                S[offset3d(i, j, k, ni, nj)] += -0.5*(W[offset2d(j+1,k, nj)]-W[offset2d(j-1,k,nj)]); 
             }
         }
 
+    }
+    for(int i = 0; i<= imax; i++){
+        for(int j = 0; j <= jmax; j++){
+            for(int k = 0; k <= 3; k++ ){
+                S[offset3d(i, j, k, ni, nj)] *=dt;
+            }
+
+        }
     }
 
 }
@@ -416,8 +428,8 @@ void BC(double *x, double *y, int tel, int teu, double *Q, int ni, int nj, doubl
 }
 int print_output(int ni,int nj,double *x, double *y)
 {
-    //char *output_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW2\\output.txt";
-    char *output_file_path = "C:\\Users\\roiB\\Desktop\\CFD\\CFD_086376\\HW2\\output.txt";
+    char *output_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW2\\output.txt";
+    //char *output_file_path = "C:\\Users\\roiB\\Desktop\\CFD\\CFD_086376\\HW2\\output.txt";
     
     FILE *output= fopen(output_file_path, "wt"); //crating output file
     for (int i = 0; i < ni*nj; i++){
@@ -429,8 +441,8 @@ int print_output(int ni,int nj,double *x, double *y)
 }
 int print_Q(int ni,int nj,double *Q)
 {
-    //char *output_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW2\\output.txt";
-    char *output_file_path = "C:\\Users\\roiB\\Desktop\\CFD\\CFD_086376\\HW2\\Q.txt";
+    char *output_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW2\\Q.txt";
+    //char *output_file_path = "C:\\Users\\roiB\\Desktop\\CFD\\CFD_086376\\HW2\\Q.txt";
     
     FILE *output= fopen(output_file_path, "wt"); //crating output file
     for (int i = 0; i < ni*nj*4; i++){
@@ -444,11 +456,14 @@ int print_Q(int ni,int nj,double *Q)
 int main() {
     int ni, nj, teu, tel;
     double M_0, alpha, p_0, rho_0; // Ensure these are doubles
+    double epse = 0.06;
+    double dt = pow(10,-6);
     // Read the parameters (ni, nj, teu, tel, Mach number, etc.)
     if (input(&ni, &nj, &teu, &tel, &M_0, &alpha, &p_0, &rho_0) != 0) {
         printf("Failed to read input parameters.\n");
         return -1; // Exit if input fails
     }
+    
     printf("ni: %d, nj: %d, teu: %d, tel: %d\n", ni, nj, teu, tel);
     printf("Mach number: %f, Alpha: %f, Pressure: %f, rho: %f\n", M_0, alpha, p_0, rho_0);
 
@@ -464,7 +479,6 @@ int main() {
     double *Q = (double *)malloc(num_points * 4 * sizeof(double));
     double *S = (double *)malloc(num_points * 4 * sizeof(double));
     double *W = (double *)malloc(MAX(ni, nj) * 4 * sizeof(double));
-    //double *S = (double *)malloc(MAX(ni,nj) * 4 * sizeof(double));
     double *ksi_x = (double *)malloc(num_points * sizeof(double));
     double *ksi_y = (double *)malloc(num_points * sizeof(double));
     double *etta_x = (double *)malloc(num_points * sizeof(double));
@@ -473,15 +487,28 @@ int main() {
     double *rspec = (double *)malloc(MAX(ni,nj) * sizeof(double));
     double *qv = (double *)malloc(MAX(ni,nj) * sizeof(double));
     double *dd = (double *)malloc(MAX(ni,nj) * sizeof(double));
+    input_mesh(x, y, ni, nj);
 
     matrics(imax, jmax, ni, nj, x, y, jacobian, ksi_x, ksi_y, etta_x, etta_y );
+    print_output(ni, nj, ksi_x, ksi_y);
     freestream (rho_0, p_0, M_0, alpha, Q, imax, jmax, ni, nj);
-    BC(x, y, tel, teu, Q, ni, nj, ksi_x, ksi_y, etta_x, etta_y, jmax);
+    
+    for (int step = 0; step < 500; step++){
+        BC(x, y, tel, teu, Q, ni, nj, ksi_x, ksi_y, etta_x, etta_y, jmax);
+        RHS(ni, nj, imax, jmax,  jacobian, ksi_x, ksi_y, etta_x, etta_y, Q, W, S, dt);
+        smooth(Q, S, jacobian, ksi_x, ksi_y, etta_x, etta_y, ni, nj, s2, rspec, qv, dd, epse, M_0, dt);
+        for (int i = 1; i<imax; i++){
+            for (int j = 1; j < jmax; j++){
+                for(int k = 0; k <= 3; k++){
+                    Q[offset3d(i, j, k, ni, nj)] += S[offset3d(i, j, k, ni, nj)]*jacobian[offset2d(i, j, ni)];
+                }
+            }
+        }
 
-    //RHS(ni, nj, imax, jmax,  jacobian, ksi_x, ksi_y, etta_x, etta_y, Q, W, S);
-    double epse = 0.006;
-    double dt = 0.01;
-    //smooth(Q, S, jacobian, ksi_x, ksi_y, etta_x, etta_y, ni, nj, s2, rspec, qv, dd, epse, M_0, dt);
+    }
+    
+
+    
     //print_output(ni, nj, Q, jacobian);
     print_Q(ni,nj,Q);
 
