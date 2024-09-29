@@ -456,7 +456,7 @@ void Calc_Jacob_LHS(int i, int ni, double k_x, double k_y, double Q_0, double Q_
 
     B[offset3d(i, 2, 0, ni, 4)] = k_y*psi_square - v*theta;
     B[offset3d(i, 2, 1, ni, 4)] = k_x*v - k_y*gamma_1*u;
-    B[offset3d(i, 2, 2, ni, 4)] = theta -k_y*gamma_2*v;
+    B[offset3d(i, 2, 2, ni, 4)] = theta - k_y*gamma_2*v;
     B[offset3d(i, 2, 3, ni, 4)] = k_y*gamma_1;
 
     B[offset3d(i, 3, 0, ni, 4)] = theta*(2*psi_square - gamma*Q_3/Q_0);
@@ -468,7 +468,11 @@ void Calc_Jacob_LHS(int i, int ni, double k_x, double k_y, double Q_0, double Q_
 }
 void LHSX(int ni, int nj, int j, double dt, double *Q,double *A, double *B, double *C, double *ksi_x, double *ksi_y){
     for (int i = 0; i < ni; i++){
-        Calc_Jacob_LHS(i, ni, ksi_x[offset2d(i, j, ni)], ksi_y[offset2d(i, j, ni)], Q[offset3d(i, j, 0, ni, nj)], Q[offset3d(i, j, 1, ni, nj)], Q[offset3d(i, j, 2, ni, nj)], Q[offset3d(i, j, 3, ni, nj)], B);
+        double Q_0 = Q[offset3d(i,j,0,ni,nj)];
+        double Q_1 = Q[offset3d(i,j,1,ni,nj)];
+        double Q_2 = Q[offset3d(i,j,2,ni,nj)];
+        double Q_3 = Q[offset3d(i,j,3,ni,nj)];
+        Calc_Jacob_LHS(i, ni, ksi_x[offset2d(i, j, ni)], ksi_y[offset2d(i, j, ni)], Q_0, Q_1, Q_2, Q_3,B);
     }
     for (int n = 0; n < 4; n++){
         for (int m = 0; m < 4; m++){
@@ -494,7 +498,11 @@ for (int i = 0; i < ni-1; i++){
 }
 void LHSY(int ni, int nj, int i, double dt, double *Q,double *A, double *B, double *C, double *etta_x, double *etta_y){
     for (int j = 0; j < nj; j++){
-        Calc_Jacob_LHS(j, nj, etta_x[offset2d(i, j, ni)], etta_y[offset2d(i, j, ni)], Q[offset3d(i, j, 0, ni, nj)], Q[offset3d(i, j, 1, ni, nj)], Q[offset3d(i, j, 2, ni, nj)], Q[offset3d(i, j, 3, ni, nj)], B);
+        double Q_0 = Q[offset3d(i,j,0,ni,nj)];
+        double Q_1 = Q[offset3d(i,j,1,ni,nj)];
+        double Q_2 = Q[offset3d(i,j,2,ni,nj)];
+        double Q_3 = Q[offset3d(i,j,3,ni,nj)];
+        Calc_Jacob_LHS(j, nj, etta_x[offset2d(i, j, ni)], etta_y[offset2d(i, j, ni)], Q_0, Q_1, Q_2, Q_3,B);
     }
     for (int n = 0; n < 4; n++){
         for (int m = 0; m < 4; m++){
@@ -806,29 +814,29 @@ void step(int ni, int nj, double dt, int imax, int jmax, double *jacobian, doubl
     RHS(ni, nj, imax, jmax,  jacobian, ksi_x, ksi_y, etta_x, etta_y, Q, W, S, dt);
     smooth(Q, S, jacobian, ksi_x, ksi_y, etta_x, etta_y, ni, nj, s2, rspec, qv, dd, epse, M_0, dt);
     // ksi inversions
-    for(int j = 1; j< nj -1 ; j++){
-       LHSX(ni, nj, j, dt, Q, A, B, C, ksi_x, ksi_y); 
+    for(int j = 1; j< nj -1; j++){
+       LHSX(ni, nj, j, dt, Q, A, B, C, ksi_x, ksi_y);
        smoothx(Q, ksi_x, ksi_y, ni, nj,  A, B, C, j, jacobian, drr, drp, rspec, qv, dd, 2*epse, M_0, dt);
        for (int k = 0; k < 4; k++){
             for (int i = 0; i < ni -1; i++){
-                D[offset2d(i, k, ni)] = S[offset3d(i, j, k, ni, nj)];
+                D[offset2d(i, k, ni)] = S[offset3d(i, j, k, ni, 4)];
             }
        }
        btri4s(A, B, C, D, ni, 1, 1);
        for (int k = 0; k < 4; k++){
             for (int i = 0; i < ni -1; i++){
-                S[offset3d(i, j, k, ni, nj)] = D[offset2d(i, k, ni)];
+                S[offset3d(i, j, k, ni, 4)] = D[offset2d(i, k, ni)];
             }
        }
     }
-/*
+
     // etta inversions
     for(int i = 1; i< ni -1 ; i++){
-       LHSX(ni, nj, i, dt, Q, A, B, C, etta_x, etta_y); 
+       LHSY(ni, nj, i, dt, Q, A, B, C, etta_x, etta_y); 
        smoothy(Q, etta_x, etta_y, ni, nj,  A, B, C, i, jacobian, drr, drp, rspec, qv, dd, 2*epse, M_0, dt);
        for (int k = 0; k < 4; k++){
             for (int j = 0; j < nj -1; j++){
-                D[offset2d(j, k, nj)] = S[offset3d(i, j, k, ni, nj)]; // maybe change S for i and j
+                D[offset2d(j, k, nj)] = S[offset3d(i, j, k, ni, 4)]; // Load D from S
             }
        }
 
@@ -836,12 +844,12 @@ void step(int ni, int nj, double dt, int imax, int jmax, double *jacobian, doubl
 
        for (int k = 0; k < 4; k++){
             for (int j = 0; j < nj -1; j++){
-                S[offset3d(i, j, k, ni, nj)] = D[offset2d(j, k, nj)];
+                S[offset3d(i, j, k, ni, 4)] = D[offset2d(j, k, nj)];
             }
        }
-    }*/
+    }
     // Upating the solution
-    for (int i = 1; i<imax; i++){
+    for (int i = 1; i < imax; i++){
             for (int j = 1; j < jmax; j++){
                 for(int k = 0; k <= 3; k++){
                     Q[offset3d(i, j, k, ni, nj)] += S[offset3d(i, j, k, ni, nj)]*jacobian[offset2d(i, j, ni)];
@@ -849,6 +857,11 @@ void step(int ni, int nj, double dt, int imax, int jmax, double *jacobian, doubl
             }
         }
 }
+int convergence(int i, int j, int ni, int nj, double Q){
+
+
+}
+
 int print_output(int ni,int nj,double *x, double *y)
 {
     char *output_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW2\\output.txt";
@@ -935,15 +948,13 @@ int main() {
 				}
 			}
 		}
-	}
-    print_Q(ni,nj,Q);*/
+	}*/
 
-    for (int iter = 0; iter < 100; iter++){
+   for (int iter = 0; iter < 20000; iter++){
         BC(x, y, tel, teu, Q, ni, nj, ksi_x, ksi_y, etta_x, etta_y, jmax);
         step(ni, nj, dt, imax, jmax, jacobian, Q, W, S, s2, rspec, qv, dd, epse, M_0, A, B, C, D, ksi_x, ksi_y, etta_x, etta_y, drr, drp);
     }
         
-    //print_output(ni, nj, Q, jacobian);
     print_Q(ni,nj,Q);
 
     // Free the dynamically allocated memory

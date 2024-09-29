@@ -1,7 +1,19 @@
 clear, clc;
+%% Input
+Mach_0 = 1.5;
+Alpha_0  = 3; % [deg]
+P_0 = 101325; % [Pa]
+Rho_0 = 1.225; % [kg / m^3]
+ID = 'C:\Users\roiba\Documents\CFD_086376\HW2\parametrs.txt';
+        file = fopen(ID, 'wt');
+        fprintf(file, '%f %f %f %f\n', Mach_0, Alpha_0, P_0, Rho_0);
+        fclose(file);
 gamma = 1.4;
 ni = 51;
 nj = 26;
+%% Run
+system('HW2.exe')
+%% Read Q mat
 Q = table2array(readtable("Q.txt"));
 Q0 = Q(1:ni*nj);
 Q1 = Q(ni*nj+1:2*ni*nj);
@@ -36,15 +48,19 @@ for i=1:1:26
     y_mat(:,i)=y(k:k+50,1);
     k = k+51;
 end
-%%
+%% Plotting
 figure
 hold on
 grid on
 plot(x_mat(:,1), y_mat(:,1), 'k',LineWidth=2); %j min
-%%quiver(x_mat,y_mat,u,v,0.05)
-%%xlim([-0.2 1.2])
-%%ylim([-0.2 0.2])
+%quiver(x_mat,y_mat,u,v,0.05)
+xlim([-0.5 1.5])
+ylim([-1 1])
 colormap("turbo");
 contourf(x_mat,y_mat,mach,30,LineStyle="none")
 colorbar
+cb = colorbar; % Create the colorbar and get its handle
+cb.Label.String = 'Mach'; % Set the label for the colorbar
+title(['NACA 0012 Mach = ' num2str(Mach_0) ', \alpha = ' num2str(Alpha_0)])
+
 
