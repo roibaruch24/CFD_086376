@@ -90,6 +90,22 @@ int input_mesh(double *x, double *y, int ni, int nj)
     fclose(input); // Close mesh file
     return 0; // Success
 }
+// finds the absolute max in a vec
+// Function to calculate the L2 norm of a given array
+double L2Norm(double* S, int ni, int nj) {
+    double sum = 0.0;
+    
+    for (int i = 0; i < ni; ++i) {
+        for (int j = 0; j < nj; ++j) {
+            for (int k = 0; k < 4; ++k) { // Assuming Q has 4 components as usual
+                double value = S[offset3d(i, j, k, ni, nj)];
+                sum += value * value;
+            }
+        }
+    }
+    
+    return sqrt(sum);
+}
 void matrics(int imax, int jmax, int ni, int nj, double *x, double *y, double *jacobian, double *ksi_x, double *ksi_y, double *etta_x, double *etta_y)
 {
     
@@ -819,13 +835,13 @@ void step(int ni, int nj, double dt, int imax, int jmax, double *jacobian, doubl
        smoothx(Q, ksi_x, ksi_y, ni, nj,  A, B, C, j, jacobian, drr, drp, rspec, qv, dd, 2*epse, M_0, dt);
        for (int k = 0; k < 4; k++){
             for (int i = 0; i < ni -1; i++){
-                D[offset2d(i, k, ni)] = S[offset3d(i, j, k, ni, 4)];
+                D[offset2d(i, k, ni)] = S[offset3d(i, j, k, ni, nj)];
             }
        }
-       btri4s(A, B, C, D, ni, 1, 1);
+       btri4s(A, B, C, D, ni, 1, ni-2);
        for (int k = 0; k < 4; k++){
             for (int i = 0; i < ni -1; i++){
-                S[offset3d(i, j, k, ni, 4)] = D[offset2d(i, k, ni)];
+                S[offset3d(i, j, k, ni, nj)] = D[offset2d(i, k, ni)];
             }
        }
     }
@@ -836,15 +852,15 @@ void step(int ni, int nj, double dt, int imax, int jmax, double *jacobian, doubl
        smoothy(Q, etta_x, etta_y, ni, nj,  A, B, C, i, jacobian, drr, drp, rspec, qv, dd, 2*epse, M_0, dt);
        for (int k = 0; k < 4; k++){
             for (int j = 0; j < nj -1; j++){
-                D[offset2d(j, k, nj)] = S[offset3d(i, j, k, ni, 4)]; // Load D from S
+                D[offset2d(j, k, nj)] = S[offset3d(i, j, k, ni, nj)]; // Load D from S
             }
        }
 
-       btri4s(A, B, C, D, nj, 1, 1);
+       btri4s(A, B, C, D, nj, 1, nj-2);
 
        for (int k = 0; k < 4; k++){
             for (int j = 0; j < nj -1; j++){
-                S[offset3d(i, j, k, ni, 4)] = D[offset2d(j, k, nj)];
+                S[offset3d(i, j, k, ni, nj)] = D[offset2d(j, k, nj)];
             }
        }
     }
@@ -857,9 +873,15 @@ void step(int ni, int nj, double dt, int imax, int jmax, double *jacobian, doubl
             }
         }
 }
-int convergence(int i, int j, int ni, int nj, double Q){
-
-
+int convergence(int ni, int nj, double *S, double init_s, int iter){
+    double s_now = L2Norm(S, ni, nj);
+    printf("%lf %d\n",s_now/init_s, iter);
+    if (s_now/init_s < 1e-4){
+        return 1;
+    }
+    else{
+        return 0;
+    }
 }
 
 int print_output(int ni,int nj,double *x, double *y)
@@ -893,7 +915,7 @@ int main() {
     int ni, nj, teu, tel;
     double M_0, alpha, p_0, rho_0; // Ensure these are doubles
     double epse = 0.06;
-    double dt = pow(10,-6);
+    double dt = pow(10,-3);
     // Read the parameters (ni, nj, teu, tel, Mach number, etc.)
     if (input(&ni, &nj, &teu, &tel, &M_0, &alpha, &p_0, &rho_0) != 0) {
         printf("Failed to read input parameters.\n");
@@ -933,28 +955,19 @@ int main() {
 
     matrics(imax, jmax, ni, nj, x, y, jacobian, ksi_x, ksi_y, etta_x, etta_y );
     freestream (rho_0, p_0, M_0, alpha, Q, imax, jmax, ni, nj);
-    /*for (int a = 0; a < 1000; a++)
-	{
-		BC(x, y, tel, teu, Q, ni, nj, ksi_x, ksi_y, etta_x, etta_y, jmax);
-		RHS(ni, nj, imax, jmax,  jacobian, ksi_x, ksi_y, etta_x, etta_y, Q, W, S, dt);
-		smooth(Q,S,jacobian,ksi_x,ksi_y,etta_x,etta_y,ni,nj,s2,rspec,qv,dd,epse,M_0,dt);
-		for (int i = 1;i < imax;i++)
-		{
-			for(int j = 1;j < jmax;j++)
-			{
-				for (int k = 0; k <=3;k++)
-				{
-					Q[offset3d(i,j,k,ni,nj)] += S[offset3d(i,j,k,ni,nj)]*jacobian[offset2d(i,j,ni)];
-				}
-			}
-		}
-	}*/
-
-   for (int iter = 0; iter < 20000; iter++){
+    int iter = 1;
+    double init_s;
+    while (1){
         BC(x, y, tel, teu, Q, ni, nj, ksi_x, ksi_y, etta_x, etta_y, jmax);
         step(ni, nj, dt, imax, jmax, jacobian, Q, W, S, s2, rspec, qv, dd, epse, M_0, A, B, C, D, ksi_x, ksi_y, etta_x, etta_y, drr, drp);
-    }
-        
+        if(iter == 1){
+            init_s = L2Norm(S, ni, nj);
+        }
+        iter++;
+        if (convergence(ni, nj, S, init_s, iter) == 1){
+            break;
+        }
+    }   
     print_Q(ni,nj,Q);
 
     // Free the dynamically allocated memory

@@ -1,7 +1,7 @@
 clear, clc;
 %% Input
-Mach_0 = 1.5;
-Alpha_0  = 3; % [deg]
+Mach_0 = 0.9;
+Alpha_0  = 0; % [deg]
 P_0 = 101325; % [Pa]
 Rho_0 = 1.225; % [kg / m^3]
 ID = 'C:\Users\roiba\Documents\CFD_086376\HW2\parametrs.txt';
