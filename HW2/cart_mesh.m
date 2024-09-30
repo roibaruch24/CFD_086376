@@ -1,12 +1,14 @@
 clear, clc;
 %% Input
 Mach_0 = 0.9;
-Alpha_0  = 0; % [deg]
+Alpha_0  = 3; % [deg]
 P_0 = 101325; % [Pa]
 Rho_0 = 1.225; % [kg / m^3]
+dt = 1e-5;
+res = 1e-3;
 ID = 'C:\Users\roiba\Documents\CFD_086376\HW2\parametrs.txt';
         file = fopen(ID, 'wt');
-        fprintf(file, '%f %f %f %f\n', Mach_0, Alpha_0, P_0, Rho_0);
+        fprintf(file, '%f %f %f %f %f %f\n', Mach_0, Alpha_0, P_0, Rho_0, dt, res);
         fclose(file);
 gamma = 1.4;
 ni = 51;

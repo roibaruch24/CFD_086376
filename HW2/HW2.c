@@ -13,7 +13,7 @@ int offset3d(int const i, int const j,int const k, int const ni ,int const nj)
     return (k * nj +j) * ni + i;
 }
 // Reads the input file for parameters
-int input(int *ni, int *nj, int *teu, int *tel, double *M, double *alpha, double *p, double *rho) 
+int input(int *ni, int *nj, int *teu, int *tel, double *M, double *alpha, double *p, double *rho, double *dt, double *res) 
 {
     const char *parameters_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW2\\parametrs.txt";
     //const char *parameters_file_path = "C:\\Users\\roiB\\Desktop\\CFD\\CFD_086376\\HW2\\parametrs.txt";
@@ -29,7 +29,7 @@ int input(int *ni, int *nj, int *teu, int *tel, double *M, double *alpha, double
     }
 
     // Read Mach number, alpha, pressure, and rho from parameters file
-    if (fscanf(input_param, "%lf %lf %lf %lf", M, alpha, p, rho) != 4) 
+    if (fscanf(input_param, "%lf %lf %lf %lf %lf %lf", M, alpha, p, rho, dt, res) != 6) 
     {
         printf("Error reading M, alpha, p, rho from the parameters file.\n");
         fclose(input_param);
@@ -838,7 +838,9 @@ void step(int ni, int nj, double dt, int imax, int jmax, double *jacobian, doubl
                 D[offset2d(i, k, ni)] = S[offset3d(i, j, k, ni, nj)];
             }
        }
+
        btri4s(A, B, C, D, ni, 1, ni-2);
+
        for (int k = 0; k < 4; k++){
             for (int i = 0; i < ni -1; i++){
                 S[offset3d(i, j, k, ni, nj)] = D[offset2d(i, k, ni)];
@@ -873,10 +875,9 @@ void step(int ni, int nj, double dt, int imax, int jmax, double *jacobian, doubl
             }
         }
 }
-int convergence(int ni, int nj, double *S, double init_s, int iter){
+int convergence(int ni, int nj, double *S, double init_s, double res){
     double s_now = L2Norm(S, ni, nj);
-    printf("%lf %d\n",s_now/init_s, iter);
-    if (s_now/init_s < 1e-4){
+    if (s_now/init_s < res){
         return 1;
     }
     else{
@@ -913,11 +914,10 @@ int print_Q(int ni,int nj,double *Q)
 
 int main() {
     int ni, nj, teu, tel;
-    double M_0, alpha, p_0, rho_0; // Ensure these are doubles
+    double M_0, alpha, p_0, rho_0, dt, res; // Ensure these are doubles
     double epse = 0.06;
-    double dt = pow(10,-3);
-    // Read the parameters (ni, nj, teu, tel, Mach number, etc.)
-    if (input(&ni, &nj, &teu, &tel, &M_0, &alpha, &p_0, &rho_0) != 0) {
+        // Read the parameters (ni, nj, teu, tel, Mach number, etc.)
+    if (input(&ni, &nj, &teu, &tel, &M_0, &alpha, &p_0, &rho_0, &dt, &res) != 0) {
         printf("Failed to read input parameters.\n");
         return -1; // Exit if input fails
     }
@@ -964,7 +964,7 @@ int main() {
             init_s = L2Norm(S, ni, nj);
         }
         iter++;
-        if (convergence(ni, nj, S, init_s, iter) == 1){
+        if (convergence(ni, nj, S, init_s, res) == 1){
             break;
         }
     }   
@@ -993,8 +993,6 @@ int main() {
     free(dd);
     free(drr);
     free(drp);
-
-
     printf("yalla\n");
     return 0; 
 }
