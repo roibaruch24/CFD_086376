@@ -192,16 +192,12 @@ void freestream (double rho, double p, double M, double alpha, double *Q, int im
     }
 
 }
-void bc_wall(double *x, double *y, int tel, int teu, double *Q, int ni, int nj, double *ksi_x, double *ksi_y, double *etta_x, double *etta_y){
+void bc_wall(double *x, double *y, int tel, int teu, double *Q, int ni, int nj, double *ksi_x, double *ksi_y, double *etta_x, double *etta_y, double *jacobian){
     for (int i = tel; i<=teu; i++){
             double u_1 = Q[offset3d(i, 1, 1,ni, nj)]/Q[offset3d(i, 1, 0, ni, nj)];
             double v_1 = Q[offset3d(i, 1, 2,ni, nj)]/Q[offset3d(i, 1, 0, ni, nj)];
-            double u = ((ksi_x[offset2d(i, 1, ni)]*u_1 )+ksi_y[offset2d(i, 1, ni)]*v_1)/(ksi_x[offset2d(i, 0, ni)]-ksi_y[offset2d(i, 0, ni)]*(etta_x[offset2d(i, 0, ni)]/etta_y[offset2d(i, 0, ni)]));
-            double v =(-etta_x[offset2d(i,0,ni)])/(etta_y[offset2d(i,0,ni)])*u;
-            if (etta_y[offset2d(i,0,ni)]==0)
-            {
-            v = (ksi_x[offset2d(i,1,ni)]*u_1+(ksi_y[offset2d(i,1,ni)])*v_1-ksi_x[offset2d(i,0,ni)]*u)/ksi_y[offset2d(i,0,ni)];
-            }       
+            double u = ((ksi_x[offset2d(i, 1, ni)]*u_1 + ksi_y[offset2d(i, 1, ni)]*v_1) * etta_y[offset2d(i, 0, ni)]) / jacobian[offset2d(i, 0, ni)];
+            double v = (-etta_x[offset2d(i, 0, ni)]) * (ksi_x[offset2d(i, 1, ni)]*u_1 + ksi_y[offset2d(i, 1, ni)]*v_1) / jacobian[offset2d(i, 0, ni)];
             double rho = Q[offset3d(i,1,0,ni,nj)];
             double e1 = Q[offset3d(i,1,3,ni,nj)];
             double P = (gamma-1)*(e1-0.5*rho*(pow(u_1,2)+(pow(v_1,2))));
@@ -442,8 +438,8 @@ double *rho, *u_vel, *v_vel, *t_e;
 
     return 0;
 } /* smooth */
-void BC(double *x, double *y, int tel, int teu, double *Q, int ni, int nj, double *ksi_x, double *ksi_y, double *etta_x, double *etta_y, int jmax){
-    bc_wall(x, y, tel, teu, Q, ni, nj, ksi_x, ksi_y, etta_x, etta_y);
+void BC(double *x, double *y, int tel, int teu, double *Q, int ni, int nj, double *ksi_x, double *ksi_y, double *etta_x, double *etta_y, int jmax, double *jacobian){
+    bc_wall(x, y, tel, teu, Q, ni, nj, ksi_x, ksi_y, etta_x, etta_y, jacobian);
     Kutta(x, y, tel, teu, Q, ni, nj, ksi_x, ksi_y, etta_x, etta_y);
     bc_cut(x ,y , tel, teu, Q, ni, nj, ksi_x, ksi_y, etta_x, etta_y);
     bc_outflow (x, y, tel, teu, Q, ni, nj, ksi_x, ksi_y, etta_x, etta_y, jmax);
@@ -979,7 +975,7 @@ int main() {
     int iter = 0;
     double init_s;
     while (1){
-        BC(x, y, tel, teu, Q, ni, nj, ksi_x, ksi_y, etta_x, etta_y, jmax);
+        BC(x, y, tel, teu, Q, ni, nj, ksi_x, ksi_y, etta_x, etta_y, jmax, jacobian);
         step(ni, nj, dt, imax, jmax, jacobian, Q, W, S, s2, rspec, qv, dd, epse, M_0, A, B, C, D, ksi_x, ksi_y, etta_x, etta_y, drr, drp);
         if(iter == 0){
             init_s = L2Norm(S, ni, nj);

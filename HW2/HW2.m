@@ -53,7 +53,7 @@ Mesh_file_name = 'input_mesh.txt';
 Mesh_file_name_original = 'output.txt';
 % ================================= Flags =================================
 Flag.Run_CFD_flag   = 1;
-Flag.Run_Mesh_flag  = 3;
+Flag.Run_Mesh_flag  = 1;
 Flag.Mach_plot_flag = 1;
 Flag.Cp_plot_flag   = 1;
 Flag.Mesh_plot      = 1;
@@ -183,7 +183,7 @@ plot(Output.x_mat(:,1), Output.y_mat(:,1), 'k',LineWidth=2); %j min
 xlim([-0.5 1.5])
 ylim([-1 1])
 colormap("turbo");
-contourf(Output.x_mat,Output.y_mat,Output.Mach,30,LineStyle="none")
+contourf(Output.x_mat,Output.y_mat,Output.Mach,390,LineStyle="none")
 colorbar
 cb = colorbar; 
 cb.Label.String = 'Mach'; % Set the label for the colorbar
@@ -198,7 +198,7 @@ plot(Output.x_mat(:,1), Output.y_mat(:,1), 'k',LineWidth=2); %j min
 xlim([-0.5 1.5])
 ylim([-1 1])
 colormap("turbo");
-contourf(Output.x_mat,Output.y_mat,Output.Cp,30,LineStyle="none")
+contourf(Output.x_mat,Output.y_mat,Output.Cp,300,LineStyle="none")
 colorbar
 cb = colorbar; 
 cb.Label.String = 'C_p'; % Set the label for the colorbar
