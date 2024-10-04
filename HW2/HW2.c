@@ -90,7 +90,6 @@ int input_mesh(double *x, double *y, int ni, int nj)
     fclose(input); // Close mesh file
     return 0; // Success
 }
-// finds the absolute max in a vec
 // Function to calculate the L2 norm of a given array
 double L2Norm(double* S, int ni, int nj) {
     double sum = 0.0;
@@ -513,6 +512,7 @@ for (int i = 0; i < ni-1; i++){
 
 }
 void LHSY(int ni, int nj, int i, double dt, double *Q,double *A, double *B, double *C, double *etta_x, double *etta_y){
+   
     for (int j = 0; j < nj; j++){
         double Q_0 = Q[offset3d(i,j,0,ni,nj)];
         double Q_1 = Q[offset3d(i,j,1,ni,nj)];
@@ -541,7 +541,6 @@ for (int j = 0; j < nj-1; j++){
     }
 }
 }
-
 int smoothx(double *q, double *xx, double *xy, int id, int jd, double *a,
 	   double *b, double *c, int j,double *jac, double *drr, double *drp, 
            double *rspec, double *qv, double *dd,
@@ -834,7 +833,7 @@ void step(int ni, int nj, double dt, int imax, int jmax, double *jacobian, doubl
        LHSX(ni, nj, j, dt, Q, A, B, C, ksi_x, ksi_y);
        smoothx(Q, ksi_x, ksi_y, ni, nj,  A, B, C, j, jacobian, drr, drp, rspec, qv, dd, 2*epse, M_0, dt);
        for (int k = 0; k < 4; k++){
-            for (int i = 0; i < ni -1; i++){
+            for (int i = 0; i < ni; i++){
                 D[offset2d(i, k, ni)] = S[offset3d(i, j, k, ni, nj)];
             }
        }
@@ -842,7 +841,7 @@ void step(int ni, int nj, double dt, int imax, int jmax, double *jacobian, doubl
        btri4s(A, B, C, D, ni, 1, ni-2);
 
        for (int k = 0; k < 4; k++){
-            for (int i = 0; i < ni -1; i++){
+            for (int i = 0; i < ni ; i++){
                 S[offset3d(i, j, k, ni, nj)] = D[offset2d(i, k, ni)];
             }
        }
@@ -853,7 +852,7 @@ void step(int ni, int nj, double dt, int imax, int jmax, double *jacobian, doubl
        LHSY(ni, nj, i, dt, Q, A, B, C, etta_x, etta_y); 
        smoothy(Q, etta_x, etta_y, ni, nj,  A, B, C, i, jacobian, drr, drp, rspec, qv, dd, 2*epse, M_0, dt);
        for (int k = 0; k < 4; k++){
-            for (int j = 0; j < nj -1; j++){
+            for (int j = 0; j < nj ; j++){
                 D[offset2d(j, k, nj)] = S[offset3d(i, j, k, ni, nj)]; // Load D from S
             }
        }
@@ -861,7 +860,7 @@ void step(int ni, int nj, double dt, int imax, int jmax, double *jacobian, doubl
        btri4s(A, B, C, D, nj, 1, nj-2);
 
        for (int k = 0; k < 4; k++){
-            for (int j = 0; j < nj -1; j++){
+            for (int j = 0; j < nj ; j++){
                 S[offset3d(i, j, k, ni, nj)] = D[offset2d(j, k, nj)];
             }
        }
@@ -911,6 +910,28 @@ int print_Q(int ni,int nj,double *Q)
     fclose(output);
     return 0;
 }
+//Prints the residue output file
+int print_residue(int iter, double *S, double init_s, int ni, int nj) {
+    char *output_file_path = "C:\\Users\\roiba\\Documents\\CFD_086376\\HW2\\residue.txt";
+    FILE *output;
+    if (iter == 1){
+        output = fopen(output_file_path, "w");
+    }
+    else{
+        output = fopen(output_file_path, "a");
+    }
+
+    if (output == NULL) {
+        perror("Error opening file");
+        return 1;
+    }
+    double s_now = L2Norm(S, ni, nj);
+    fprintf(output, " %d %.15lf\n", iter, s_now/init_s);
+
+    fclose(output);
+
+    return 0;
+}
 
 int main() {
     int ni, nj, teu, tel;
@@ -955,15 +976,16 @@ int main() {
 
     matrics(imax, jmax, ni, nj, x, y, jacobian, ksi_x, ksi_y, etta_x, etta_y );
     freestream (rho_0, p_0, M_0, alpha, Q, imax, jmax, ni, nj);
-    int iter = 1;
+    int iter = 0;
     double init_s;
     while (1){
         BC(x, y, tel, teu, Q, ni, nj, ksi_x, ksi_y, etta_x, etta_y, jmax);
         step(ni, nj, dt, imax, jmax, jacobian, Q, W, S, s2, rspec, qv, dd, epse, M_0, A, B, C, D, ksi_x, ksi_y, etta_x, etta_y, drr, drp);
-        if(iter == 1){
+        if(iter == 0){
             init_s = L2Norm(S, ni, nj);
         }
         iter++;
+        print_residue(iter, S, init_s, ni, nj);
         if (convergence(ni, nj, S, init_s, res) == 1){
             break;
         }

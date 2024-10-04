@@ -1,4 +1,4 @@
-ccc
+
 %% scattering
 load output.txt
 x = output(:,1);
