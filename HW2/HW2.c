@@ -242,7 +242,7 @@ void Kutta (double *x, double *y, int tel, int teu, double *Q, int ni, int nj, d
 void bc_cut(double *x, double *y, int tel, int teu, double *Q, int ni, int nj, double *ksi_x, double *ksi_y, double *etta_x, double *etta_y){
     for(int i = 1; i < tel; i++){
         for (int k = 0; k <= 3; k++){
-            Q[offset3d(i, 0, k, ni, nj)] = 0.5*(Q[offset3d(i,1,k,ni,nj)] + Q[offset3d(ni-1, 1,k,ni, nj)]);
+            Q[offset3d(i, 0, k, ni, nj)] = 0.5*(Q[offset3d(i,1,k,ni,nj)] + Q[offset3d(ni-1-i, 1,k,ni, nj)]);
             Q[offset3d(ni - 1 - i, 0, k, ni, nj)] = Q[offset3d(i, 0 , k, ni, nj)];
         }
     }

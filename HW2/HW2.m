@@ -53,20 +53,20 @@ Mesh_file_name = 'input_mesh.txt';
 Mesh_file_name_original = 'output.txt';
 % ================================= Flags =================================
 Flag.Run_CFD_flag   = 1;
-Flag.Run_Mesh_flag  = 1;
+Flag.Run_Mesh_flag  = 0;
 Flag.Mach_plot_flag = 1;
 Flag.Cp_plot_flag   = 1;
-Flag.Mesh_plot      = 1;
-Flag.Residue_plot   = 1;
+Flag.Mesh_plot      = 0;
+Flag.Residue_plot   = 0;
 
 % ============================= Manual Inputs =============================
 
-Input.Mach_0 = 0.98;
-Input.Alpha_0  = 3; % [deg]
+Input.Mach_0 = 1.5;
+Input.Alpha_0  = 0; % [deg]
 Input.P_0 = 101325; % [Pa]
 Input.Rho_0 = 1.225; % [kg / m^3]
 Input.dt = 1e-4;
-Input.res = 1e-3;
+Input.res = 1e-4;
 Input.Gamma_0 = 1.4;
 ni = 51;
 nj = 26;
@@ -94,6 +94,7 @@ if Flag.Residue_plot
     plot_residue(Input,Output)
 end
 
+Output_forces =  Aero_forces (Output, Input)
 
 % =============================== Functions ===============================
 
@@ -150,8 +151,8 @@ end
 u = Q1_mat./Q0_mat;
 v = Q2_mat./Q0_mat;
 u_mag = sqrt(u.^2+v.^2);
-p = (Input.Gamma_0-1)*(Q3_mat-0.5*Q0_mat.*u_mag.^2);
-a = sqrt(Input.Gamma_0*p./Q0_mat);
+Output.p = (Input.Gamma_0-1)*(Q3_mat-0.5*Q0_mat.*u_mag.^2);
+a = sqrt(Input.Gamma_0*Output.p./Q0_mat);
 Output.Mach = u_mag./a;
 fid = fopen(Mesh_file_name, 'r');
 fgetl(fid);
@@ -169,9 +170,8 @@ for i=1:1:nj
     Output.y_mat(:,i)=y(k:k+ni-1,1);
     k = k+ni;
 end
-a_0 = sqrt(Input.Gamma_0*Input.P_0/Input.Rho_0);
-q_dyn_0 = 0.5*Input.Rho_0*(Input.Mach_0*a_0)^2;
-Output.Cp = (p - Input.P_0)./q_dyn_0;
+q_dyn_0 = 0.5*1.4*Input.P_0*(Input.Mach_0)^2;
+Output.Cp = (Output.p - Input.P_0)./q_dyn_0;
 Output.Residue = load (Residue_file_name);
 end
 
@@ -212,4 +212,63 @@ title(['Residue plot for M = ' num2str(Input.Mach_0) ', \alpha = ' num2str(Input
 xlabel('Iteration')
 ylabel('Residue')
 grid on
+end
+
+function Output_forces =  Aero_forces (Output, Input)
+%%
+% Define airfoil coordinates (x, y) and corresponding Cp values
+x_airfoil = Output.x_mat(12:40,1);  % x-coordinates of surface points
+y_airfoil = Output.y_mat(12:40,1);  % y-coordinates of surface points
+Cp = Output.Cp(12:40,1);
+% Number of points on the surface
+n_points = length(x_airfoil);
+
+% Preallocate force component arrays
+Cx = zeros(n_points-1, 1);  % Force in x-direction
+Cz = zeros(n_points-1, 1);  % Force in z-direction
+
+% Loop over each surface segment to calculate forces
+for i = 1:(n_points-1)
+    % Coordinates of the current surface segment
+    x1 = x_airfoil(i);
+    y1 = y_airfoil(i);
+    x2 = x_airfoil(i+1);
+    y2 = y_airfoil(i+1);
+
+    % Calculate the length of the surface segment
+    dS = sqrt((x2 - x1)^2 + (y2 - y1)^2);
+
+    % Calculate the normal vector (nx, nz)
+    tangent_x = x2 - x1;
+    tangent_y = y2 - y1;
+
+    % Calculate the normal vector (perpendicular to the tangent)
+    normal_x = -tangent_y;  % Outward normal in x-direction
+    normal_z = tangent_x;   % Outward normal in z-direction
+    magnitude = sqrt(normal_x^2 + normal_z^2);
+    nx = normal_x / magnitude;  % Normal vector in x-direction
+    nz = normal_z / magnitude;  % Normal vector in z-direction
+
+    % Make sure normals point outward:
+    % If the airfoil's surface points are ordered clockwise, this is OK.
+    % If they are ordered counterclockwise, reverse the normal direction:
+    nx = -nx;  % Uncomment this if your normals point inward
+    nz = -nz;  % Uncomment this if your normals point inward
+
+    % Average pressure coefficient for this surface segment
+    Cp_avg = (Cp(i) + Cp(i+1)) / 2;
+
+
+    % Calculate force components on this segment
+   Cx(i) = Cp_avg * dS * nx;  % Force in x-direction
+   Cz(i) = Cp_avg * dS * nz;  % Force in z-direction
+end
+figure
+plot(x_airfoil, Cp)
+Total_Fx = trapz(y_airfoil(1:end-1), Cx);  
+Total_Fy = trapz(x_airfoil(1:end-1), Cz);  
+
+Output_forces.Lift = Total_Fy * cosd(Input.Alpha_0) - Total_Fx * sind(Input.Alpha_0);
+Output_forces.Drag = Total_Fx * cosd(Input.Alpha_0) + Total_Fy * sind(Input.Alpha_0);
+
 end
