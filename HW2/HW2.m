@@ -61,12 +61,12 @@ Flag.Residue_plot   = 0;
 
 % ============================= Manual Inputs =============================
 
-Input.Mach_0 = 1.5;
+Input.Mach_0 = 0.3;
 Input.Alpha_0  = 0; % [deg]
 Input.P_0 = 101325; % [Pa]
 Input.Rho_0 = 1.225; % [kg / m^3]
-Input.dt = 1e-4;
-Input.res = 1e-4;
+Input.dt = 1e-5;
+Input.res = 1e-3;
 Input.Gamma_0 = 1.4;
 ni = 51;
 nj = 26;
