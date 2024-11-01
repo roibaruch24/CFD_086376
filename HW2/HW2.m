@@ -54,18 +54,18 @@ Mesh_file_name_original = 'output.txt';
 % ================================= Flags =================================
 Flag.Run_CFD_flag   = 1;
 Flag.Run_Mesh_flag  = 0;
-Flag.Mach_plot_flag = 1;
-Flag.Cp_plot_flag   = 1;
+Flag.Mach_plot_flag = 0;
+Flag.Cp_plot_flag   = 0;
 Flag.Mesh_plot      = 0;
 Flag.Residue_plot   = 0;
 
 % ============================= Manual Inputs =============================
 
-Input.Mach_0 = 0.3;
-Input.Alpha_0  = 0; % [deg]
+Input.Mach_0 = 0.755;
+Input.Alpha_0  = 5; % [deg]
 Input.P_0 = 101325; % [Pa]
 Input.Rho_0 = 1.225; % [kg / m^3]
-Input.dt = 1e-5;
+Input.dt = 1e-4;
 Input.res = 1e-3;
 Input.Gamma_0 = 1.4;
 ni = 51;
@@ -263,12 +263,12 @@ for i = 1:(n_points-1)
    Cx(i) = Cp_avg * dS * nx;  % Force in x-direction
    Cz(i) = Cp_avg * dS * nz;  % Force in z-direction
 end
+Output_forces.Total_Fx = sum(Cx);  
+Output_forces.Total_Fy = sum(Cz);  
+
+Output_forces.Lift = Output_forces.Total_Fy * cosd(Input.Alpha_0) - Output_forces.Total_Fx * sind(Input.Alpha_0);
+Output_forces.Drag = Output_forces.Total_Fx * cosd(Input.Alpha_0) + Output_forces.Total_Fy * sind(Input.Alpha_0);
 figure
-plot(x_airfoil, Cp)
-Total_Fx = trapz(y_airfoil(1:end-1), Cx);  
-Total_Fy = trapz(x_airfoil(1:end-1), Cz);  
-
-Output_forces.Lift = Total_Fy * cosd(Input.Alpha_0) - Total_Fx * sind(Input.Alpha_0);
-Output_forces.Drag = Total_Fx * cosd(Input.Alpha_0) + Total_Fy * sind(Input.Alpha_0);
-
+plot(x_airfoil, -Cp)
+grid on
 end

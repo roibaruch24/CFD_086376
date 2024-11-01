@@ -248,7 +248,7 @@ void bc_cut(double *x, double *y, int tel, int teu, double *Q, int ni, int nj, d
     }
 }
 void bc_outflow(double *x, double *y, int tel, int teu, double *Q, int ni, int nj, double *ksi_x, double *ksi_y, double *etta_x, double *etta_y, int jmax){
-    for(int j = 1; j < jmax; j++){
+    for(int j = 1; j <= jmax; j++){
         for (int k = 0; k <= 3; k++){
             Q[offset3d(0, j, k, ni, nj)] =  Q[offset3d(1, j, k, ni, nj)];
             Q[offset3d(ni - 1, j, k, ni, nj)] = Q[offset3d(ni-2, j , k, ni, nj)];
