@@ -42,7 +42,6 @@ clear, clc, close all;
 % ================================= Paths =================================
 
 main_path = 'C:\Users\roiba\Documents\CFD_086376\HW2';
-mesh_path = 'C:\Users\roiba\Documents\CFD_086376\HW1';
 
 % ================================= Filenames =============================
 
@@ -53,15 +52,14 @@ Mesh_file_name = 'input_mesh.txt';
 Mesh_file_name_original = 'output.txt';
 % ================================= Flags =================================
 Flag.Run_CFD_flag   = 1;
-Flag.Run_Mesh_flag  = 0;
-Flag.Mach_plot_flag = 0;
-Flag.Cp_plot_flag   = 0;
-Flag.Mesh_plot      = 0;
-Flag.Residue_plot   = 0;
+Flag.Mach_plot_flag = 1;
+Flag.Cp_plot_flag   = 1;
+Flag.Mesh_plot      = 1;
+Flag.Residue_plot   = 1;
 
 % ============================= Manual Inputs =============================
 
-Input.Mach_0 = 0.755;
+Input.Mach_0 = 1.5;
 Input.Alpha_0  = 5; % [deg]
 Input.P_0 = 101325; % [Pa]
 Input.Rho_0 = 1.225; % [kg / m^3]
@@ -72,10 +70,6 @@ ni = 51;
 nj = 26;
 
 % ================================= Main ==================================
-if Flag.Run_Mesh_flag
-    Run_Mesh (main_path, mesh_path, Mesh_file_name, Mesh_file_name_original, Flag)
-end
-
 if Flag.Run_CFD_flag 
     Input_parameters(Input,Input_file_name, main_path);
     system('HW2.exe')
@@ -88,13 +82,11 @@ if Flag.Cp_plot_flag
     plot_cp(Input, Output)
 end
 if Flag.Mesh_plot
-    plot_mesh(Output)
+    plot_mesh(Output,Input)
 end
 if Flag.Residue_plot
     plot_residue(Input,Output)
 end
-
-Output_forces =  Aero_forces (Output, Input)
 
 % =============================== Functions ===============================
 
@@ -105,14 +97,7 @@ fprintf(file, '%f %f %f %f %f %f\n', Input.Mach_0, Input.Alpha_0, Input.P_0, Inp
 fclose(file);
 end
 
-function Run_Mesh (main_path, mesh_path, Mesh_file_name, Mesh_file_name_original, Flag)
-cd(mesh_path)
-Mesh_input(Flag.Run_Mesh_flag)
-system('HW1.exe');
-copyfile([mesh_path '\' Mesh_file_name_original], [main_path '\' Mesh_file_name]);
-end
-
-function plot_mesh(Output)
+function plot_mesh(Output,Input)
 figure
 hold on
 grid minor
@@ -126,6 +111,7 @@ end
 for i = 2:1:50
     plot(Output.x_mat(i,:), Output.y_mat(i,:),'b','LineWidth',0.5)
 end
+saveas(gcf,['Mesh plot for M = ' num2str(Input.Mach_0) ', _alpha_ = ' num2str(Input.Alpha_0),'.png'] , 'png')
 end
 
 function Output = Post_process(Output_file_name, main_path, Mesh_file_name, Residue_file_name, ni, nj, Input)
@@ -159,7 +145,6 @@ fgetl(fid);
 Grid_file_mat = textscan(fid, '%f %f');
 fclose(fid);
 
-
 x = cell2mat(Grid_file_mat(:,1));
 y = cell2mat(Grid_file_mat(:,2));
 Output.x_mat = zeros(ni,nj);
@@ -180,6 +165,18 @@ figure
 hold on
 grid on
 plot(Output.x_mat(:,1), Output.y_mat(:,1), 'k',LineWidth=2); %j min
+colormap("turbo");
+contourf(Output.x_mat,Output.y_mat,Output.Mach,390,LineStyle="none")
+colorbar
+cb = colorbar; 
+cb.Label.String = 'Mach'; 
+title(['Mach plot NACA 0012 Mach = ' num2str(Input.Mach_0) ', \alpha = ' num2str(Input.Alpha_0)])
+saveas(gcf,['Mach plot NACA 0012 Mach = ' num2str(Input.Mach_0) ', _alpha_ = ' num2str(Input.Alpha_0),'.png'] , 'png')
+
+figure
+hold on
+grid on
+plot(Output.x_mat(:,1), Output.y_mat(:,1), 'k',LineWidth=2); %j min
 xlim([-0.5 1.5])
 ylim([-1 1])
 colormap("turbo");
@@ -187,10 +184,23 @@ contourf(Output.x_mat,Output.y_mat,Output.Mach,390,LineStyle="none")
 colorbar
 cb = colorbar; 
 cb.Label.String = 'Mach'; % Set the label for the colorbar
-title(['Mach plot NACA 0012 Mach = ' num2str(Input.Mach_0) ', \alpha = ' num2str(Input.Alpha_0)])
+title(['Mach plot NACA 0012 Mach = ' num2str(Input.Mach_0) ', \alpha = ' num2str(Input.Alpha_0),' Zoomed'])
+saveas(gcf,['Mach plot NACA 0012 Mach = ' num2str(Input.Mach_0) ', _alpha_ = ' num2str(Input.Alpha_0),'_Zoomed','.png'] , 'png')
 end
 
 function plot_cp(Input, Output)
+figure
+hold on
+grid on
+plot(Output.x_mat(:,1), Output.y_mat(:,1), 'k',LineWidth=2); %j min
+colormap("turbo");
+contourf(Output.x_mat,Output.y_mat,Output.Cp,300,LineStyle="none")
+colorbar
+cb = colorbar; 
+cb.Label.String = 'C_p'; 
+title(['C_p plot NACA 0012 Mach = ' num2str(Input.Mach_0) ', \alpha = ' num2str(Input.Alpha_0)])
+saveas(gcf,['C_p plot NACA 0012 Mach = ' num2str(Input.Mach_0) ', _alpha_ = ' num2str(Input.Alpha_0),'.png'] , 'png')
+
 figure
 hold on
 grid on
@@ -201,8 +211,9 @@ colormap("turbo");
 contourf(Output.x_mat,Output.y_mat,Output.Cp,300,LineStyle="none")
 colorbar
 cb = colorbar; 
-cb.Label.String = 'C_p'; % Set the label for the colorbar
-title(['C_p plot NACA 0012 Mach = ' num2str(Input.Mach_0) ', \alpha = ' num2str(Input.Alpha_0)])
+cb.Label.String = 'C_p'; 
+title(['C_p plot NACA 0012 Mach = ' num2str(Input.Mach_0) ', \alpha = ' num2str(Input.Alpha_0),' Zoomed'])
+saveas(gcf,['C_p plot NACA 0012 Mach = ' num2str(Input.Mach_0) ', _alpha_ = ' num2str(Input.Alpha_0),'_Zoomed','.png'] , 'png')
 end
 
 function plot_residue(Input,Output)
@@ -212,63 +223,5 @@ title(['Residue plot for M = ' num2str(Input.Mach_0) ', \alpha = ' num2str(Input
 xlabel('Iteration')
 ylabel('Residue')
 grid on
-end
-
-function Output_forces =  Aero_forces (Output, Input)
-%%
-% Define airfoil coordinates (x, y) and corresponding Cp values
-x_airfoil = Output.x_mat(12:40,1);  % x-coordinates of surface points
-y_airfoil = Output.y_mat(12:40,1);  % y-coordinates of surface points
-Cp = Output.Cp(12:40,1);
-% Number of points on the surface
-n_points = length(x_airfoil);
-
-% Preallocate force component arrays
-Cx = zeros(n_points-1, 1);  % Force in x-direction
-Cz = zeros(n_points-1, 1);  % Force in z-direction
-
-% Loop over each surface segment to calculate forces
-for i = 1:(n_points-1)
-    % Coordinates of the current surface segment
-    x1 = x_airfoil(i);
-    y1 = y_airfoil(i);
-    x2 = x_airfoil(i+1);
-    y2 = y_airfoil(i+1);
-
-    % Calculate the length of the surface segment
-    dS = sqrt((x2 - x1)^2 + (y2 - y1)^2);
-
-    % Calculate the normal vector (nx, nz)
-    tangent_x = x2 - x1;
-    tangent_y = y2 - y1;
-
-    % Calculate the normal vector (perpendicular to the tangent)
-    normal_x = -tangent_y;  % Outward normal in x-direction
-    normal_z = tangent_x;   % Outward normal in z-direction
-    magnitude = sqrt(normal_x^2 + normal_z^2);
-    nx = normal_x / magnitude;  % Normal vector in x-direction
-    nz = normal_z / magnitude;  % Normal vector in z-direction
-
-    % Make sure normals point outward:
-    % If the airfoil's surface points are ordered clockwise, this is OK.
-    % If they are ordered counterclockwise, reverse the normal direction:
-    nx = -nx;  % Uncomment this if your normals point inward
-    nz = -nz;  % Uncomment this if your normals point inward
-
-    % Average pressure coefficient for this surface segment
-    Cp_avg = (Cp(i) + Cp(i+1)) / 2;
-
-
-    % Calculate force components on this segment
-   Cx(i) = Cp_avg * dS * nx;  % Force in x-direction
-   Cz(i) = Cp_avg * dS * nz;  % Force in z-direction
-end
-Output_forces.Total_Fx = sum(Cx);  
-Output_forces.Total_Fy = sum(Cz);  
-
-Output_forces.Lift = Output_forces.Total_Fy * cosd(Input.Alpha_0) - Output_forces.Total_Fx * sind(Input.Alpha_0);
-Output_forces.Drag = Output_forces.Total_Fx * cosd(Input.Alpha_0) + Output_forces.Total_Fy * sind(Input.Alpha_0);
-figure
-plot(x_airfoil, -Cp)
-grid on
+saveas(gcf,['Residue plot for M = ' num2str(Input.Mach_0) ', _alpha_ = ' num2str(Input.Alpha_0),'.png'] , 'png')
 end
